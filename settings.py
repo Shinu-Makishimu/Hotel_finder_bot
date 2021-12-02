@@ -6,18 +6,22 @@ buttons_eng = {'low': 'Low price',
                'hist': 'Your history',
                'main_h': 'Click on the button with the desired operation',
                'greet': 'This is a low-quality bot from a dumb developer.\n(btw, your id is ',
-               'help': 'Following commands are avaliable: \n'} # словарь в который будут положены названия кнопок на английском
-buttons_rus = dict() # словарь в который будут положены названия кнопок на русском
+               'help': 'Following commands are avaliable: \n'}  # словарь в который будут положены названия кнопок на английском
+buttons_rus = dict()  # словарь в который будут положены названия кнопок на русском
+
+content_type_ANY = ['audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'caption']
 
 API_TOKEN = config('KEY')
+
 commands = {'start': 'Start using this bot',
             'main': '4 butttons',
             'lowprice': 'find low',
             'bestdeal': 'find best',
             'highprice': 'find high',
-            'history': "Show user's history" }
+            'history': "Show user's history"}
 
-excluded_types = ['audio', 'document', 'photo','sticker', 'video', 'voice'] # список непринимаемых типов данных.
+excluded_types = ['audio', 'document', 'photo', 'sticker', 'video', 'voice']  # список непринимаемых типов данных.
+
 
 class User:
     """
@@ -30,6 +34,8 @@ class User:
         self.id = chat_id
         self.name = first_name
         self.surname = last_name
+        self.user_req = []
+        self.is_running = False
         User.add_user(chat_id, self)
 
     @classmethod
@@ -37,9 +43,9 @@ class User:
         cls.users[id] = user
 
     @classmethod
-    def get_user(cls, id,name,surname):
+    def get_user(cls, id, name, surname):
         if not id in cls.users.keys():
-            object = User(id,name,surname)
-        object=cls.users[id]
+            user_object = User(id, name, surname)
+        user_object = cls.users[id]
 
-        return object
+        return user_object
