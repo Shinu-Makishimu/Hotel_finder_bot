@@ -3,8 +3,12 @@ import functools
 import keyboard as kb
 from telebot import TeleBot
 from settings import commands, buttons_eng, API_TOKEN, User, content_type_ANY
+from database import add_user
 
 bot = TeleBot(API_TOKEN)
+
+
+
 
 
 @bot.message_handler(commands=['start'])
@@ -16,7 +20,8 @@ def start_message(message):
     """
     client = User.get_user(message.from_user.id, message.from_user.first_name, message.from_user.last_name)
     chat_id = message.chat.id
-    text = f"Hi! {client.name} {client.surname}!\n {buttons_eng['greet']} {client.id})"
+    db_response = add_user((message.from_user.id, message.from_user.first_name, message.from_user.last_name, message.from_user.username))
+    text = f"Hi! {client.name} {client.surname}!\n {buttons_eng['greet']} {client.id}\n{db_response})"
     bot.send_message(chat_id, text)
     main_choice(message)
 
@@ -85,15 +90,16 @@ def text_handler(message):
 # ответчики
 
 
-@bot.callback_query_handler(func=lambda call: call.data == 'low') #ветка лоу прайс
+@bot.callback_query_handler(func=lambda call: call.data in ['low', 'high']) #ветка лоу прайс
 def callback_main_menu(call):
     """
     Ответчик на пункт меню low
     :param call:
     :return:
     """
+    key = call.data
     chat_id = call.message.chat.id
-    text = "Exellent! Your choice is low price hotel!\nNow, send me country name"
+    text = f"Exellent! Your choice is {key} price hotel!\nNow, send me country name"
     # text2 = call.message
     bot.send_message(chat_id, text)
     bot.register_next_step_handler(call.message, low_price_cntr)

@@ -30,13 +30,13 @@ class User:
     """
     users = dict()
 
-    def __init__(self, chat_id, first_name, last_name):
-        self.id = chat_id
+    def __init__(self, user_id, first_name, last_name):
+        self.id = user_id
         self.name = first_name
         self.surname = last_name
         self.user_req = []
         self.is_running = False
-        User.add_user(chat_id, self)
+        User.add_user(user_id, self)
 
     @classmethod
     def add_user(cls, id, user):
