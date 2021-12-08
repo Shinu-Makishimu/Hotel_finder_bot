@@ -11,41 +11,19 @@ buttons_rus = dict()  # словарь в который будут положе
 
 content_type_ANY = ['audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'caption']
 
+commands_list = ['start','lowprice', 'highprice', 'bestdeal', 'settings']
+
 API_TOKEN = config('KEY')
 
-commands = {'start': 'Start using this bot',
-            'main': '4 butttons',
-            'lowprice': 'find low',
-            'bestdeal': 'find best',
-            'highprice': 'find high',
-            'history': "Show user's history"}
+user_status = {
+    None: 'first_use',
+    'stt': 'start',
+    'cfg': 'settings',
+    'cnt': 'country',
+    'twn': 'city',
+    'dst': 'radius',
+    'prs': 'price'
+}
 
 excluded_types = ['audio', 'document', 'photo', 'sticker', 'video', 'voice']  # список непринимаемых типов данных.
 
-
-class User:
-    """
-    вместо базы данных пока что буду пользоваться классом. Ровно до того момента как будут реализованы функции.
-    в дальнейшем переделать под sql
-    """
-    users = dict()
-
-    def __init__(self, user_id, first_name, last_name):
-        self.id = user_id
-        self.name = first_name
-        self.surname = last_name
-        self.user_req = []
-        self.is_running = False
-        User.add_user(user_id, self)
-
-    @classmethod
-    def add_user(cls, id, user):
-        cls.users[id] = user
-
-    @classmethod
-    def get_user(cls, id, name, surname):
-        if not id in cls.users.keys():
-            user_object = User(id, name, surname)
-        user_object = cls.users[id]
-
-        return user_object

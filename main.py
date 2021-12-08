@@ -1,14 +1,23 @@
 import sqlite3
 import functools
-import keyboard as kb
+
+import telebot.types
 from telebot import TeleBot
-from settings import commands, buttons_eng, API_TOKEN, User, content_type_ANY
-from database import add_user
+from settings import API_TOKEN, commands_list
+from database import redis_db, check_user, create_user
+from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard
 
 bot = TeleBot(API_TOKEN)
 
 
+# памятка по отслеживанию пользователя
 
+# Шаблон для работы с пользователем:
+# поймать ответ, фильтр тип ответа. ключ, начинается с...
+# проверить пользователя на существование и/или проверить положение пользователя (status)
+# занести в базу положение пользователя в меню
+# показать пользователю что либо
+#
 
 
 @bot.message_handler(commands=['start'])
@@ -18,121 +27,119 @@ def start_message(message):
     :param message:
     :return:
     """
-    client = User.get_user(message.from_user.id, message.from_user.first_name, message.from_user.last_name)
-    chat_id = message.chat.id
-    db_response = add_user((message.from_user.id, message.from_user.first_name, message.from_user.last_name, message.from_user.username))
-    text = f"Hi! {client.name} {client.surname}!\n {buttons_eng['greet']} {client.id}\n{db_response})"
-    bot.send_message(chat_id, text)
-    main_choice(message)
+    if not check_user(message):
+        create_user(message)
+
+    reply = '\npls enter comm'
+    user_id = message.from_user.id
+    status = redis_db.hget(user_id, 'status')
+
+    if status is None:
+        reply = '\npls add your settings first'
+        kb = settings_keyboard
+        bot.send_message(message.chat.id, 'settings', reply_markup=kb)
+    elif status == 0:
+        reply = 'welcome back'
+    bot.send_message(message.chat.id, 'this is hello message' + reply)
 
 
-@bot.message_handler(commands=['help'])# хелп
+@bot.message_handler(commands=['help'])
 def help_message(message):
-    """
-    Обработчик команды хелп
-    :param message:
-    :return:
-    """
-    chat_id = message.chat.id
-    help_text = buttons_eng['help']
-    for command, description in commands.items():
-        help_text += f"/{command}: {description}\n"
-    bot.send_message(chat_id, help_text)
+    if not check_user(message):
+        create_user(message)
+
+    user_id = message.from_user.id
+    reply = 'this is comm_list'
+    lang = redis_db.hget(user_id, 'language')
+
+    for i_comm in commands_list:
+        reply += '/' + i_comm + '\n'
+
+    # TODO: добавить описание команд
 
 
-@bot.message_handler(commands=['main'])
-def main_choice(message):
+@bot.message_handler(commands='settings')
+def settings_menu(message):
     """
-    главное меню с кнопками. клавиатура и кнопки берутся из файла keyboard
-    :param message:
-    :return:
-    """
-    text_message = buttons_eng['main_h']
-    bot.send_message(message.from_user.id, text_message, reply_markup=kb.main_kb)
-
-
-@bot.message_handler(content_types=['text']) #ответчик на текст
-def text_handler(message):
-    """
-    Ответчик на текстовое сообщение
-    :param message:
-    :return:
-    """
-    text = message.text.lower()
-    chat_id = message.chat.id
-    date = message.date
-    response = 'я о тебе знаю:\n дата сообщения {date},\n твой id {id},' \
-               '\n имя {name}, второе имя{last_name}, ник {username} '.format(
-        date=date,
-        id=message.from_user.id,
-        name=message.from_user.first_name,
-        last_name=message.from_user.last_name,
-        username=message.from_user.username
-    )
-    if text == '??':
-        bot.send_message(chat_id, response)
-    else:
-        bot.send_message(chat_id, "i don't understand")
-
-
-@bot.message_handler(content_types=[content_type_ANY]) #ответчик на ANY
-def text_handler(message):
-    """
-    Ответчик если пользователь послал: документ, войс, пикчу, видео, аудио.
-    в переменной хранится лист, создается в файле сеттингс
-    :param message:
-    :return:
-    """
-    chat_id = message.chat.id
-    bot.send_message(chat_id, 'incorrect data')
-
-#################################################
-# ответчики
-
-
-@bot.callback_query_handler(func=lambda call: call.data in ['low', 'high']) #ветка лоу прайс
-def callback_main_menu(call):
-    """
-    Ответчик на пункт меню low
+    Главное меню настроек
     :param call:
     :return:
     """
-    key = call.data
-    chat_id = call.message.chat.id
-    text = f"Exellent! Your choice is {key} price hotel!\nNow, send me country name"
-    # text2 = call.message
-    bot.send_message(chat_id, text)
-    bot.register_next_step_handler(call.message, low_price_cntr)
+    if not check_user(message):
+        create_user(message)
+    user_id = message.from_user.id
+    redis_db.hset(user_id, 'status', 1)
+
+    bot.send_message(user_id, 'settings menu', reply_markup=settings_keyboard)
 
 
-def low_price_cntr(message):
-    chat_id = message.chat.id
-    text = message.text
-    if not text.isalpha():
-        message = bot.send_message(chat_id, 'country name has incorrect symbols')
-        bot.register_next_step_handler(message, low_price_cntr) #askSource
-        return
-    message = bot.send_message(chat_id, 'your input is ' + text + ' Now, enter the city')
-    bot.register_next_step_handler(message, low_price_city)
+@bot.callback_query_handler(func=lambda call: call.data.startwith('set'))
+def callback_settings(call):
+    """
+    Подменю настроек
+    :param call:
+    :return:
+    """
+    user_id = call.message.chat.id
 
-def low_price_city(message):
-    chat_id = message.chat.id
-    text = message.text
-    if not text.isalpha():
-        message = bot.send_message(chat_id, 'city name has incorrect symbols')
-        bot.register_next_step_handler(message, low_price_city)
-        return
-    bot.send_message(chat_id, 'here is some result from api. FIN')
+    if call.data == 'set_country':
+        bot.send_message(user_id, 'your country')
+    elif call.data == 'set_money':
+        bot.send_message(user_id, 'your answer ', reply_markup=money_keyboard)
+    elif call.data == 'set_language':
+        bot.send_message(user_id, 'your answer ', reply_markup=language_keyboard)
 
 
+@bot.callback_query_handler(func=lambda call: call.data.startwith('money'))
+def callback_money(call):
+    """
+    запись в бд параметра валюты
+    :param call:
+    :return:
+    """
+    user_id = call.message.chat.id
+    if call.data.endswith('RUB'):
+        redis_db.hset(user_id, 'money', 'RUB')
+    elif call.data.endswith('USD'):
+        redis_db.hset(user_id, 'money', 'USD')
+    elif call.data.endswith('EUR'):
+        redis_db.hset(user_id, 'money', 'EUR')
+    bot.send_message(user_id, f'now, your money is {call.data[6:]}')
+    # TODO: отправить пользвателя в главное меню.
 
 
+@bot.callback_query_handler(func=lambda call: call.data.startwith('language'))
+def callback_language(call):
+    """
+    запись в бд параметра языка
+    :param call:
+    :return:
+    """
+    user_id = call.message.chat.id
+
+    if call.data.endswith('RUSS'):
+        redis_db.hset(user_id, 'language', 'RUSS')
+    elif call.data.endswith('ENGL'):
+        redis_db.hset(user_id, 'language', 'ENGL')
+    elif call.data.endswith('ESPA'):
+        redis_db.hset(user_id, 'language', 'ESPA')
+
+    bot.send_message(user_id, f'now, your money is {call.data[6:]}')
+    # TODO: отправить пользвателя в главное меню.
 
 
-
-
-
-
+@bot.message_handler(content_types=['text'])
+def text_reply(message):
+    """
+    Тут обработчик текстовых ответов на вопросы о цене, радиусе поиска, городе
+    :param message:
+    :return:
+    """
+    user_id = message.from_user.id
+    status = redis_db.hget(user_id, 'status')
+    if status == 1:
+        # TODO: найти способ проверить страну на корректность
+        redis_db.hset(user_id, 'country', )
 
 
 bot.infinity_polling()

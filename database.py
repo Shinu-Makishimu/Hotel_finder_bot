@@ -1,153 +1,80 @@
-import sqlite3
-import redis
 from datetime import datetime
+import telebot
 
-# структура базы данных:
-# user_id id юзера
-# user_name имя
-# user_surname фамилмя
-# username ник
-# status на чем пользователь остановился
-# request  его запросы
+import redis
 
-# user_data  должна содержать user_id, user_name, user_surname, username
+redis_db = redis.StrictRedis(host='localhost', port=6379, db=1, charset='utf-8', decode_responses=True)
 
+user_status = {
+    None: 'first_use',
+    0: 'start',
+    1: 'settings',
+    2: 'country',
+    3: 'city',
+    4: 'radius',
+    5: 'price'
+}
 
-def add_user(user_data):
+def check_user(message):
     """
-    это функция для работы с базой данных
-    :param user_data:
+    проверка наличия присутствия пользователя в бд. )
+    :param message:
     :return:
     """
-    user_id, user_name, user_surname, username = user_data
-    user_status = True
-    user_history = ''
-    connection = sqlite3.connect('bot.db', check_same_thread=False)
-    cursor = connection.cursor()
-    cursor.execute("SELECT user_id FROM clients WHERE user_id = {user_id}". format(user_id=user_id))
-    responce = cursor.fetchone()
-    print(responce)
-    if responce is None:
-        cursor.execute("INSERT INTO clients VALUES(?,?,?,?,?,?);", (
-            user_id,
-            user_name,
-            user_surname,
-            username,
-            user_status,
-            user_history)
-                       )
-        connection.commit()
-        return 'пользователь создан'
+    user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
+    result = redis_db.hget(user_id, 'status')  # если ключа нет, вернёт нан
+    return result
+
+
+def create_user(message):
+    """
+     hset(self, name, key=None, value=None, mapping=None)
+     |      Set ``key`` to ``value`` within hash ``name``,
+     |      ``mapping`` accepts a dict of key/value pairs that will be
+     |      added to hash ``name``.
+     |      Returns the number of fields that were added.
+    :param message:
+    :return:
+    language -язык пользователя
+    status - флаг активной сессии
+    history списко с запросами
+    """
+    user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
+    language = message.from_user.language_code  # выделить локализацию пользователя,
+    if language != 'ru':
+        language = 'en'
+    redis_db.hset(user_id, mapping={'language': language, 'money':  '', 'status': None, 'history': list()})
+
+
+def add_information(message, information):
+    """
+    добавить нестандартную информацию пользователю (а надо ли)
+    :param message:
+    :param information:
+    :return:
+    """
+    if not check_user(message):
+        create_user(message)
+    user_id = message.from_user.id
+    redis_db.hset(user_id, {'other': information})
+
+
+def return_history(message):
+    """
+    возвращает историю пользователя
+
+    :param message:
+    :return:
+    """
+    response = 'История запросов отсутствует'
+    user_id = message.from_user.id
+    history = redis_db.hget(user_id, 'history')
+    if len(history) == 0:
+        return response
     else:
-        cursor.execute("SELECT * FROM clients WHERE user_id = {user_id}".format(user_id=user_id))
-        responce = cursor.fetchone()
-        print(responce)
-        return 'пользователь существует'
+        response = 'История\n'
+        for i_line in history:
+            response += i_line + '\n'
+    return response
 
 
-
-
-
-# redis = redis.Redis()
-# redis.mset({'croatia': 'zagreb', 'russia': 'vyborg', 'germany': 'berlin'})
-# print(redis.get('russia'))
-# print(redis.get('france'))
-
-
-
-
-
-class User:
-    """
-    в классе пользователь будут хранится данные пользователя во время сессии
-    """
-    # users = dict()
-    redis = redis.Redis()
-
-    def __init__(self, user_data):
-        self.id = user_data[0]
-        self.name = user_data[1]
-        self.surname = user_data[2]
-        self.user_req = []
-        self.req_data = datetime.now()
-        self.is_running = False
-        User.add_user(user_data[0], self)
-
-    @classmethod
-    def add_user(cls, id, user):
-        cls.redis.mset({str(id): user})
-
-
-    @classmethod
-    def get_user(cls, user_data):
-        if cls.redis.get(user_data[0]) is None:
-            User(user_data)
-        return cls.redis.get(user_data[0])
-
-
-
-
-
-######################################################################################
-# class User:
-#     """
-#     вместо базы данных пока что буду пользоваться классом. Ровно до того момента как будут реализованы функции.
-#     в дальнейшем переделать под sql
-#     """
-#     users = dict()
-#
-#     def __init__(self, user_id, first_name, last_name):
-#         self.id = user_id
-#         self.name = first_name
-#         self.surname = last_name
-#         self.user_req = []
-#         self.is_running = False
-#         User.add_user(user_id, self)
-#
-#     @classmethod
-#     def add_user(cls, id, user):
-#         cls.users[id] = user
-#
-#     @classmethod
-#     def get_user(cls, id, name, surname):
-#         if not id in cls.users.keys():
-#             user_object = User(id, name, surname)
-#         user_object = cls.users[id]
-#
-#         return user_object
-
-#
-#
-# #####################################################################################
-# class User:
-#
-#     def connect_to_db(self):
-#         self.connect = sqlite3.connect('bot.db')
-#         self.cursor = self.connect.cursor()
-#
-#
-#     def close_connect(self):
-#         self.connect.close()
-#
-#
-#     def get_all_id(self):
-#         self.connect_to_db()
-#         request = 'SELECT user_id FROM clients'
-#         result = self.cursor.execute(request).fetchall()
-#         self.close_connect()
-#
-#         return [i[0] for i in result] #вернет лист результатов
-#
-#     def get_field(self, user_id, field):
-#         self.connect_to_db()
-#         request = "SELECT {field} FROM clients WHERE user_id=?".format(field=field)
-#         result = self.cursor.execute(request, (user_id,)).fetchone()
-#         self.close_connect()
-#         return result[0]
-#
-#     def set_field(self, user_id, field, value):
-#         self.connect_to_db()
-#         request = "UPDATE clients SET {field}=? WHERE user_id=?".format(field=field)
-#         self.cursor.execute(request, (value, user_id))
-#         self.connect.commit()
-#         self.close_connect()
