@@ -4,7 +4,7 @@ import functools
 import telebot.types
 from telebot import TeleBot
 from settings import API_TOKEN, commands_list
-from database import redis_db, check_user, create_user
+from database import check_user, create_user, set_navigate, set_settings, get_navigate, get_settings
 from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard
 
 bot = TeleBot(API_TOKEN)
@@ -27,20 +27,28 @@ def start_message(message):
     :param message:
     :return:
     """
+    user_id = message.from_user.id
+    name = message.from_user.first_name
+    surname = message.from_user.last_name
+
     if not check_user(message):
         create_user(message)
 
-    reply = '\npls enter comm'
-    user_id = message.from_user.id
-    status = redis_db.hget(user_id, 'status')
+    reply = f'приветствие {name} {surname}'
+    # country, currency, language = get_settings(message)
+    bot.send_message(user_id, reply, reply_markup=main_menu_keyboard)
 
-    if status is None:
-        reply = '\npls add your settings first'
-        kb = settings_keyboard
-        bot.send_message(message.chat.id, 'settings', reply_markup=kb)
-    elif status == 0:
-        reply = 'welcome back'
-    bot.send_message(message.chat.id, 'this is hello message' + reply)
+    # reply = '\npls enter comm'
+    # user_id = message.from_user.id
+    # status = get_navigate(message)
+    #
+    # if status == '':
+    #     reply = '\npls add your settings first'
+    #     kb = settings_keyboard
+    #     bot.send_message(user_id, 'settings', reply_markup=kb)
+    # elif status == 0:
+    #     reply = 'welcome back'
+    # bot.send_message(user_id, 'this is hello message' + reply)
 
 
 @bot.message_handler(commands=['help'])
@@ -50,10 +58,10 @@ def help_message(message):
 
     user_id = message.from_user.id
     reply = 'this is comm_list'
-    lang = redis_db.hget(user_id, 'language')
 
     for i_comm in commands_list:
         reply += '/' + i_comm + '\n'
+    bot.send_message(user_id, 'this is command menu')
 
     # TODO: добавить описание команд
 
@@ -62,13 +70,14 @@ def help_message(message):
 def settings_menu(message):
     """
     Главное меню настроек
+    :param message:
     :param call:
     :return:
     """
     if not check_user(message):
         create_user(message)
     user_id = message.from_user.id
-    redis_db.hset(user_id, 'status', 1)
+    set_navigate(message, 1)
 
     bot.send_message(user_id, 'settings menu', reply_markup=settings_keyboard)
 
@@ -99,11 +108,11 @@ def callback_money(call):
     """
     user_id = call.message.chat.id
     if call.data.endswith('RUB'):
-        redis_db.hset(user_id, 'money', 'RUB')
+        set_settings(user_id, 'money', 'RUB')
     elif call.data.endswith('USD'):
-        redis_db.hset(user_id, 'money', 'USD')
+        set_settings(user_id, 'money', 'USD')
     elif call.data.endswith('EUR'):
-        redis_db.hset(user_id, 'money', 'EUR')
+        set_settings(user_id, 'money', 'EUR')
     bot.send_message(user_id, f'now, your money is {call.data[6:]}')
     # TODO: отправить пользвателя в главное меню.
 
@@ -118,14 +127,20 @@ def callback_language(call):
     user_id = call.message.chat.id
 
     if call.data.endswith('RUSS'):
-        redis_db.hset(user_id, 'language', 'RUSS')
+        set_settings(user_id, 'language', 'RUSS')
     elif call.data.endswith('ENGL'):
-        redis_db.hset(user_id, 'language', 'ENGL')
+        set_settings(user_id, 'language', 'ENGL')
     elif call.data.endswith('ESPA'):
-        redis_db.hset(user_id, 'language', 'ESPA')
+        set_settings(user_id, 'language', 'ESPA')
 
     bot.send_message(user_id, f'now, your money is {call.data[6:]}')
     # TODO: отправить пользвателя в главное меню.
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startwith('cancel'))
+def callback_cancel(call):
+    user_id = call.message.chat.id
+    # loc =  get_navigate()
 
 
 @bot.message_handler(content_types=['text'])
@@ -136,10 +151,10 @@ def text_reply(message):
     :return:
     """
     user_id = message.from_user.id
-    status = redis_db.hget(user_id, 'status')
+    status = get_navigate(message)
     if status == 1:
-        # TODO: найти способ проверить страну на корректность
-        redis_db.hset(user_id, 'country', )
+        pass
+    # TODO: найти способ проверить страну на корректность
 
 
 bot.infinity_polling()

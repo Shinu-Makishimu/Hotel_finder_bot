@@ -1,19 +1,28 @@
 from datetime import datetime
 import telebot
+import re
+import sqlite3
+# TODO: переписать на sql
 
-import redis
+# памятка:
+# user_id юзер id
+# status положение в меню
+# history история
+# country страна
+# currency валюта
 
-redis_db = redis.StrictRedis(host='localhost', port=6379, db=1, charset='utf-8', decode_responses=True)
+
 
 user_status = {
-    None: 'first_use',
-    0: 'start',
-    1: 'settings',
-    2: 'country',
-    3: 'city',
-    4: 'radius',
-    5: 'price'
+    'new': 'first_use',
+    'main': 'main menu',
+    'sett': 'settings',
+    'lowprice': 'low',
+    'highprice': 'high',
+    'bestdeal': 'diapason',
+    'history': 'history user'
 }
+
 
 def check_user(message):
     """
@@ -21,9 +30,19 @@ def check_user(message):
     :param message:
     :return:
     """
+
     user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
-    result = redis_db.hget(user_id, 'status')  # если ключа нет, вернёт нан
-    return result
+    connection = sqlite3.connect('bot.db', check_same_thread=False)
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT user_id FROM clients WHERE user_id = {user_id}".format(user_id=user_id))
+    response = cursor.fetchone()
+    cursor.close()
+
+    if response is None:
+        return False
+    else:
+        return True
 
 
 def create_user(message):
@@ -39,16 +58,34 @@ def create_user(message):
     status - флаг активной сессии
     history списко с запросами
     """
+    # TODO: обернуть try - exept
     user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
     language = message.from_user.language_code  # выделить локализацию пользователя,
+    currency = 'RUB'
+    status = 'new'
+    history = ''
+    country = 'россия' # проверить в апи от отеля
     if language != 'ru':
         language = 'en'
-    redis_db.hset(user_id, mapping={'language': language, 'money':  '', 'status': None, 'history': list()})
+        currency = 'EUR'
+    connection = sqlite3.connect('bot.db', check_same_thread=False)
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO clients VALUES(?,?,?,?,?,?);", (
+        user_id,
+        status,
+        history,
+        country,
+        currency,
+        language)
+                   )
+    connection.commit()
+    cursor.close()
 
 
-def add_information(message, information):
+
+def set_navigate(message, value):
     """
-    добавить нестандартную информацию пользователю (а надо ли)
+    функция для изменения параметра навигации пользователя
     :param message:
     :param information:
     :return:
@@ -56,10 +93,58 @@ def add_information(message, information):
     if not check_user(message):
         create_user(message)
     user_id = message.from_user.id
-    redis_db.hset(user_id, {'other': information})
+    connection = sqlite3.connect('bot.db', check_same_thread=False)
+    cursor = connection.cursor()
+    request = """UPGRADE clients SET status= ? WHERE user_id = ?"""
+    data = (value, user_id)
+    cursor.execute(request, data)
+    connection.commit()
+    cursor.close()
 
 
-def return_history(message):
+def set_settings(user_id, key, value):
+    connection = sqlite3.connect('bot.db', check_same_thread=False)
+    cursor = connection.cursor()
+    request = ''
+    if key == 'language':
+        request = """UPGRADE clients SET language = ? FROM clients WHERE user_id = ?"""
+    elif key == 'money':
+        request = """UPGRADE clients SET currency = ? FROM clients WHERE user_id = ?"""
+    data = (value, user_id)
+    cursor.execute(request, data)
+    connection.commit()
+    cursor.close()
+
+
+
+def get_navigate(message):
+    """
+    функция для возврата навигации пользователя
+    или
+    вернуть всё что сохранено
+    :param message:
+    :param all:
+    :return:
+    """
+    user_id = message.from_user.id
+    connection = sqlite3.connect('bot.db', check_same_thread=False)
+    cursor = connection.cursor()
+    request = """SELECT status FROM clients WHERE user_id = ?"""
+    cursor.execute(request, user_id)
+    response = cursor.fetchone()
+    cursor.close()
+    return response
+
+def get_settings(message):
+    user_id = message.from_user.id
+    connection = sqlite3.connect('bot.db', check_same_thread=False)
+    cursor = connection.cursor()
+    cursor.execute("SELECT country, currency, language FROM clients WHERE user_id = {user_id}".format(user_id=user_id))
+    response = cursor.fetchall()
+    cursor.close()
+    return response
+
+def get_history(message):
     """
     возвращает историю пользователя
 
@@ -68,13 +153,7 @@ def return_history(message):
     """
     response = 'История запросов отсутствует'
     user_id = message.from_user.id
-    history = redis_db.hget(user_id, 'history')
-    if len(history) == 0:
-        return response
-    else:
-        response = 'История\n'
-        for i_line in history:
-            response += i_line + '\n'
-    return response
+    history = None
+    # TODO: переписать метод формирования историии
 
 
