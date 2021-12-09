@@ -3,7 +3,7 @@ import telebot
 button_country = telebot.types.InlineKeyboardButton(text='country', callback_data='set_country')
 button_money = telebot.types.InlineKeyboardButton(text='money', callback_data='set_money')
 button_language = telebot.types.InlineKeyboardButton(text='language', callback_data='set_language')
-button_back = telebot.types.InlineKeyboardButton(text='back', callback_data='return')
+button_back = telebot.types.InlineKeyboardButton(text='back', callback_data='set_back')
 settings_keyboard = telebot.types.InlineKeyboardMarkup().add(
     button_country,
     button_money,
@@ -11,7 +11,7 @@ settings_keyboard = telebot.types.InlineKeyboardMarkup().add(
     button_back
     )
 
-button_lowprice = telebot.types.InlineKeyboardButton(text='Low price', callback_data='main_low')
+button_lowprice = telebot.types.InlineKeyboardButton(text='Low price', callback_data='lowprice')
 button_bestdeal = telebot.types.InlineKeyboardButton(text='Best deal', callback_data='main_high')
 button_highprice = telebot.types.InlineKeyboardButton(text='High price', callback_data='main_high')
 button_history = telebot.types.InlineKeyboardButton(text='My history', callback_data='main_hist')

@@ -31,10 +31,11 @@ def start_message(message):
     name = message.from_user.first_name
     surname = message.from_user.last_name
 
-    if not check_user(message):
-        create_user(message)
+    if not check_user(message=message):
+        create_user(message=message)
 
     reply = f'приветствие {name} {surname}'
+
     # country, currency, language = get_settings(message)
     bot.send_message(user_id, reply, reply_markup=main_menu_keyboard)
 
@@ -53,8 +54,8 @@ def start_message(message):
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
-    if not check_user(message):
-        create_user(message)
+    if not check_user(message=message):
+        create_user(message=message)
 
     user_id = message.from_user.id
     reply = 'this is comm_list'
@@ -74,12 +75,31 @@ def settings_menu(message):
     :param call:
     :return:
     """
-    if not check_user(message):
-        create_user(message)
+    if not check_user(message=message):
+        create_user(message=message)
     user_id = message.from_user.id
-    set_navigate(message, 1)
-
+    set_navigate(message=message, value='sett')
     bot.send_message(user_id, 'settings menu', reply_markup=settings_keyboard)
+
+
+
+@bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
+def starting_commands(message):
+    if not check_user(message=message):
+        create_user(message=message)
+    user_id = message.chat.id
+    set_navigate(message=message, value='main')
+    if 'lowprice' in message.text:
+        set_navigate(message=message, value='lowprice')
+        set_settings(user_id=user_id, key='order', value='PRICE')
+    elif 'highprice' in message.text:
+        set_navigate(message=message, value='highprice')
+        set_settings(user_id=user_id, key='order', value='PRICE_HIGHEST_FIRST')
+    else:
+        set_navigate(message=message, value='bestdeal')
+        set_settings(user_id=user_id, key='order', value='DISTANCE_FROM_LANDMARK')
+
+    bot.send_message(user_id, 'тут чето спросить')
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startwith('set'))
@@ -97,6 +117,9 @@ def callback_settings(call):
         bot.send_message(user_id, 'your answer ', reply_markup=money_keyboard)
     elif call.data == 'set_language':
         bot.send_message(user_id, 'your answer ', reply_markup=language_keyboard)
+    elif call.data == 'set_back':
+        start_message()
+
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startwith('money'))
@@ -155,6 +178,17 @@ def text_reply(message):
     if status == 1:
         pass
     # TODO: найти способ проверить страну на корректность
+
+def get_search_parameters(message) -> None:
+    """
+    fixes search parameters
+    :param msg: Message
+    :return: None
+    """
+
+    user_id = message.chat.id
+    status = get_navigate(message=message)
+
 
 
 bot.infinity_polling()

@@ -65,25 +65,31 @@ def create_user(message):
     status = 'new'
     history = ''
     country = 'россия' # проверить в апи от отеля
+    order = ''
     if language != 'ru':
         language = 'en'
         currency = 'EUR'
     connection = sqlite3.connect('bot.db', check_same_thread=False)
     cursor = connection.cursor()
-    cursor.execute("INSERT INTO clients VALUES(?,?,?,?,?,?);", (
-        user_id,
-        status,
-        history,
-        country,
-        currency,
-        language)
+    request = """INSERT INTO clients VALUES ?,?,?,?,?,?,? """
+    cursor.execute(
+        request,
+        (
+            user_id,
+            status,
+            history,
+            country,
+            currency,
+            language,
+            order
+        )
                    )
     connection.commit()
     cursor.close()
 
 
 
-def set_navigate(message, value):
+def set_navigate(message, value:str):
     """
     функция для изменения параметра навигации пользователя
     :param message:
