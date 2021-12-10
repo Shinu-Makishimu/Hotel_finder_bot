@@ -15,15 +15,9 @@ commands_list = ['start','lowprice', 'highprice', 'bestdeal', 'settings']
 
 API_TOKEN = config('KEY')
 
-user_status = {
-    None: 'first_use',
-    'stt': 'start',
-    'cfg': 'settings',
-    'cnt': 'country',
-    'twn': 'city',
-    'dst': 'radius',
-    'prs': 'price'
-}
+H_API_TOKEN = config('APIKEY')
+HOST = 'hotels4.p.rapidapi.com'
+url = "https://hotels4.p.rapidapi.com/locations/v2/search"
 
 excluded_types = ['audio', 'document', 'photo', 'sticker', 'video', 'voice']  # список непринимаемых типов данных.
 

@@ -35,7 +35,7 @@ def start_message(message):
     old = '\nТы уже смешарик\n'
 
     if not check_user(message=message):
-        reply+=new
+        reply += new
         create_user(message=message)
     status = get_navigate(message)
     if status != 'new':

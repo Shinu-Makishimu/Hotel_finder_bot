@@ -1,8 +1,6 @@
 from datetime import datetime
 import telebot
-import re
 import sqlite3
-# TODO: переписать на sql
 
 # памятка:
 # user_id юзер id
@@ -35,7 +33,7 @@ def check_user(message):
     connection = sqlite3.connect('bot.db', check_same_thread=False)
     cursor = connection.cursor()
 
-    cursor.execute("SELECT user_id FROM clients WHERE user_id = {user_id}".format(user_id=user_id))
+    cursor.execute("""SELECT user_id FROM clients WHERE user_id=:user_id""", {'user_id': user_id})
     response = cursor.fetchone()
     cursor.close()
 
@@ -96,7 +94,6 @@ def set_navigate(message, value:str):
     :param information:
     :return:
     """
-    # TODO: неправильный запрос на апгрейд
     if not check_user(message):
         create_user(message)
     user_id = message.from_user.id
@@ -137,7 +134,6 @@ def get_navigate(message):
     user_id = message.from_user.id
     connection = sqlite3.connect('bot.db', check_same_thread=False)
     cursor = connection.cursor()
-    # request = """SELECT status FROM clients WHERE user_id:user_id?"""
     cursor.execute("""SELECT status FROM clients WHERE user_id=:user_id""", {'user_id': user_id})
     response = cursor.fetchone()
     cursor.close()
