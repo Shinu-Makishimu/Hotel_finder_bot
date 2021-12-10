@@ -71,7 +71,7 @@ def create_user(message):
         currency = 'EUR'
     connection = sqlite3.connect('bot.db', check_same_thread=False)
     cursor = connection.cursor()
-    request = """INSERT INTO clients VALUES ?,?,?,?,?,?,? """
+    request = """INSERT INTO clients VALUES (?,?,?,?,?,?,?) """
     cursor.execute(
         request,
         (
@@ -96,12 +96,13 @@ def set_navigate(message, value:str):
     :param information:
     :return:
     """
+    # TODO: неправильный запрос на апгрейд
     if not check_user(message):
         create_user(message)
     user_id = message.from_user.id
     connection = sqlite3.connect('bot.db', check_same_thread=False)
     cursor = connection.cursor()
-    request = """UPGRADE clients SET status= ? WHERE user_id = ?"""
+    request = """UPDATE clients SET status = ? WHERE user_id = ?"""
     data = (value, user_id)
     cursor.execute(request, data)
     connection.commit()
@@ -113,9 +114,10 @@ def set_settings(user_id, key, value):
     cursor = connection.cursor()
     request = ''
     if key == 'language':
-        request = """UPGRADE clients SET language = ? FROM clients WHERE user_id = ?"""
+        request = """UPDATE clients SET language = ? WHERE user_id = ?"""
     elif key == 'money':
-        request = """UPGRADE clients SET currency = ? FROM clients WHERE user_id = ?"""
+        request = """UPDATE clients SET currency = ? WHERE user_id = ?"""
+
     data = (value, user_id)
     cursor.execute(request, data)
     connection.commit()
@@ -135,8 +137,8 @@ def get_navigate(message):
     user_id = message.from_user.id
     connection = sqlite3.connect('bot.db', check_same_thread=False)
     cursor = connection.cursor()
-    request = """SELECT status FROM clients WHERE user_id = ?"""
-    cursor.execute(request, user_id)
+    # request = """SELECT status FROM clients WHERE user_id:user_id?"""
+    cursor.execute("""SELECT status FROM clients WHERE user_id=:user_id""", {'user_id': user_id})
     response = cursor.fetchone()
     cursor.close()
     return response
