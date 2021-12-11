@@ -56,14 +56,14 @@ def create_user(message):
     status - флаг активной сессии
     history списко с запросами
     """
-    # TODO: обернуть try - exept
+    # TODO: обернуть try - exсept
     user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
     language = message.from_user.language_code  # выделить локализацию пользователя,
     currency = 'RUB'
     status = 'new'
     history = ''
     country = 'россия' # проверить в апи от отеля
-    order = ''
+    key = ''
     if language != 'ru':
         language = 'en'
         currency = 'EUR'
@@ -79,7 +79,7 @@ def create_user(message):
             country,
             currency,
             language,
-            order
+            key
         )
                    )
     connection.commit()
@@ -114,12 +114,14 @@ def set_settings(user_id, key, value):
         request = """UPDATE clients SET language = ? WHERE user_id = ?"""
     elif key == 'money':
         request = """UPDATE clients SET currency = ? WHERE user_id = ?"""
+    elif key == 'order':
+        request = """UPDATE clients SET key = ? WHERE user_id = ?"""
 
     data = (value, user_id)
+    print(data)
     cursor.execute(request, data)
     connection.commit()
     cursor.close()
-
 
 
 def get_navigate(message):
@@ -139,14 +141,21 @@ def get_navigate(message):
     cursor.close()
     return response
 
-def get_settings(message):
+
+def get_settings(message) -> list:
+    """
+    [('россия', 'USD', 'ru')]
+    :param message:
+    :return:
+    """
     user_id = message.from_user.id
     connection = sqlite3.connect('bot.db', check_same_thread=False)
     cursor = connection.cursor()
-    cursor.execute("SELECT country, currency, language FROM clients WHERE user_id = {user_id}".format(user_id=user_id))
+    cursor.execute("""SELECT country, currency, language FROM clients WHERE user_id=:user_id""", {'user_id': user_id})
     response = cursor.fetchall()
     cursor.close()
-    return response
+    return response[0]
+
 
 def get_history(message):
     """

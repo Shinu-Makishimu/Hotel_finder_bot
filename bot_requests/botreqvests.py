@@ -1,5 +1,5 @@
 import requests
-
+import json
 url = "https://hotels4.p.rapidapi.com/locations/v2/search"
 
 querystring = {"query":"new york","locale":"en_US","currency":"USD"}
@@ -11,7 +11,8 @@ headers = {
 
 response = requests.request("GET", url, headers=headers, params=querystring)
 
-print(response.text)
+data = json.loads(response.text)
 
-
+with open('exmlpe_call.txt', 'w') as file:
+    json.dump(data, file, indent=4)
 

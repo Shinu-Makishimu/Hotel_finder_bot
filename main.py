@@ -6,6 +6,7 @@ from telebot import TeleBot
 from settings import API_TOKEN, commands_list
 from database import check_user, create_user, set_navigate, set_settings, get_navigate, get_settings
 from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard
+from language import interface
 
 bot = TeleBot(API_TOKEN)
 
@@ -27,20 +28,21 @@ def start_message(message):
     :param message:
     :return:
     """
-    user_id = message.from_user.id
-    name = message.from_user.first_name
-    surname = message.from_user.last_name
-    reply = f'приветствие {name} {surname}'
-    new = '\nТы новенький\n'
-    old = '\nТы уже смешарик\n'
-
+    new = False
     if not check_user(message=message):
-        reply += new
         create_user(message=message)
-    status = get_navigate(message)
-    if status != 'new':
-        set_navigate(message=message, value='main')
-    reply += old
+        new = True
+
+    user_id = message.from_user.id
+    person = f' {message.from_user.first_name} {message.from_user.last_name}!\n'
+    country, currency, language = get_settings(message)
+    reply = interface['responses']['greeting_1'][language] + person
+
+    if new:
+        reply += interface['responses']['greeting_new'][language]
+    else:
+        reply += interface['responses']['greeting_old'][language]
+
     bot.send_message(user_id, reply, reply_markup=main_menu_keyboard)
 
 
@@ -50,7 +52,6 @@ def help_message(message):
         create_user(message=message)
 
     user_id = message.from_user.id
-    reply = 'this is comm_list'
 
     for i_comm in commands_list:
         reply += '/' + i_comm + '\n'
@@ -59,7 +60,7 @@ def help_message(message):
     # TODO: добавить описание команд
 
 
-# @bot.message_handler(commands='settings')
+@bot.message_handler(commands='settings')
 def settings_menu(message):
     """
     Главное меню настроек
@@ -70,9 +71,21 @@ def settings_menu(message):
     # TODO: отлов кнопки сеттингс?
     if not check_user(message=message):
         create_user(message=message)
+
+    country, currency, language = get_settings(message)
     user_id = message.from_user.id
     set_navigate(message=message, value='sett')
-    bot.send_message(user_id, 'settings menu', reply_markup=settings_keyboard)
+    reply = "{menu}\n{ans}\n {your_lang} {lang}\n {your_cur} {cur}".format(
+        menu=interface['elements']['settings_menu'][language],
+        ans=interface['responses']['your_settings'][language],
+        your_lang=interface['responses']['current_language'][language],
+        lang=language,
+        your_cur=interface['responses']['current_currency'][language],
+        cur=currency
+    )
+
+    bot.send_message(user_id, reply, reply_markup=settings_keyboard)
+
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('main'))
 def main_handler(call):
@@ -81,8 +94,20 @@ def main_handler(call):
     :param call:
     :return:
     """
+    # TODO: УБРАТЬ ДУБЛИРОВАНИЕ КОДА!!!!!!!!!!!!!!!!!!!!!!!
+    user_id = call.from_user.id
     if call.data.endswith('settings'):
         settings_menu(call)
+    elif call.data.endswith('low'):
+        set_navigate(message=call, value='lowprice')
+        set_settings(user_id=user_id, key='order', value='PRICE')
+    elif call.data.endswith('high'):
+        set_navigate(message=call, value='highprice')
+        set_settings(user_id=user_id, key='order', value='PRICE_HIGHEST_FIRST')
+    elif call.data.endswith("best"):
+        set_navigate(message=call, value='bestdeal')
+        set_settings(user_id=user_id, key='order', value='DISTANCE_FROM_LANDMARK')
+    bot.send_message(user_id, 'есть пробитие')
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -92,30 +117,28 @@ def starting_commands(message):
     :param message:
     :return:
     """
-    if not check_user(message=message):
-        create_user(message=message)
-
-    user_id = message.chat.id
+    # TODO: УБРАТЬ ДУБЛИРОВАНИЕ КОДА!!!!!!!!!!!!!!!!!!!!!!!
+    user_id = message.from_user.id
     status = get_navigate(message)
 
+
     if status == 'new':
-        bot.send_message(user_id, 'сначала топай в настройки')
-        settings_menu(message)
+        reply = responses['responses']['default_sett'][language]
+        bot.send_message(user_id, reply)
 
     set_navigate(message=message, value='main')
     if 'lowprice' in message.text:
         set_navigate(message=message, value='lowprice')
         set_settings(user_id=user_id, key='order', value='PRICE')
-        # TODO: переход в функцию с вопросами о параметрах
     elif 'highprice' in message.text:
         set_navigate(message=message, value='highprice')
         set_settings(user_id=user_id, key='order', value='PRICE_HIGHEST_FIRST')
-        # TODO: переход в функцию с вопросами о параметрах
     else:
         set_navigate(message=message, value='bestdeal')
         set_settings(user_id=user_id, key='order', value='DISTANCE_FROM_LANDMARK')
-        # TODO: переход в функцию с вопросами о параметрах
 
+
+    bot.send_message(user_id, 'есть пробитие')
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('set'))
@@ -137,7 +160,6 @@ def callback_settings(call):
         start_message(call)
 
 
-
 @bot.callback_query_handler(func=lambda call: call.data.startswith('money'))
 def callback_money(call):
     """
@@ -154,10 +176,8 @@ def callback_money(call):
         set_settings(user_id, 'money', 'EUR')
     else:
         settings_menu(call)
-    bot.send_message(user_id, f'now, your money is {call.data[6:]}')
     set_navigate(message=call, value='main')
     settings_menu(call)
-
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('language'))
@@ -168,17 +188,22 @@ def callback_language(call):
     :return:
     """
     user_id = call.message.chat.id
+    lang = ''
 
     if call.data.endswith('RUSS'):
-        set_settings(user_id, 'language', 'RUSS')
+        lang = 'ru'
+        set_settings(user_id, 'language', 'ru')
     elif call.data.endswith('ENGL'):
-        set_settings(user_id, 'language', 'ENGL')
+        lang = 'en'
+        set_settings(user_id, 'language', 'en')
     elif call.data.endswith('ESPA'):
-        set_settings(user_id, 'language', 'ESPA')
+        lang = 'es'
+        set_settings(user_id, 'language', 'es')
     else:
         settings_menu(call)
 
-    bot.send_message(user_id, f'now, your language is {call.data[8:]}')
+    reply = interface['responses']['saved'][lang]
+    bot.send_message(user_id, reply)
     settings_menu(call)
 
 
@@ -186,6 +211,12 @@ def callback_language(call):
 def callback_cancel(call):
     user_id = call.message.chat.id
     # loc =  get_navigate()
+
+
+def make_dialogue():
+    order, currency, language = get_settings(message)
+    reply = interface['questions']['city'][language]
+
 
 
 @bot.message_handler(content_types=['text'])
@@ -201,15 +232,7 @@ def text_reply(message):
         pass
     # TODO: найти способ проверить страну на корректность
 
-def get_search_parameters(message):
-    """
-    fixes search parameters
-    :param msg: Message
-    :return: None
-    """
 
-    user_id = message.chat.id
-    status = get_navigate(message=message)
 
 
 
