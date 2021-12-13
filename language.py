@@ -9,7 +9,7 @@ interface = {
             },
             'price': {
                 'ru': 'Некорректный ввод. Нужно ввести два целых числа, разделенных пробелом.',
-                'en': 'Incorrect entry. You must enter two integers separated by a space. '
+                'en': 'You must enter two integers separated by a space. '
             },
             'int': {
                 'ru': 'Некорректный ввод. Нужно ввести целое число.',
@@ -55,8 +55,8 @@ interface = {
                 'en': 'Enter the search radius from the city center in miles'
             },
             'count': {
-                'ru': 'Сколько отелей вывести? Максимум - 20',
-                'en': 'How many hotels to show? Maximum - 20'
+                'ru': 'Сколько отелей вывести? Максимум - ',
+                'en': 'How many hotels to show? Maximum - '
             },
             'max_distance': {
                 'ru': 'Максимальное расстояние до центра города',
@@ -65,6 +65,14 @@ interface = {
             'loc_choose': {
                 'ru': 'Выберите город из списка',
                 'en': 'Select the city from list'
+            },
+            'photo': {
+                'ru': 'Сколько фотографий вывести? Максимум - 5',
+                'en': 'How many hotels to show? Maximum - 5'
+            },
+            'need_photo': {
+                'ru': 'Нужны фотографии отеля?',
+                'en': 'Do you nedd photos?'
             }
         },
     'buttons':
@@ -160,6 +168,10 @@ interface = {
             'default_sett':{
                 'ru': 'Применяются настройки по умолчанию. Для изменения - посетите настройки',
                 'en': 'The default settings are applied. To change - visit settings'
+            },
+            'ok': {
+                'ru': 'Принято',
+                'en': 'Ok'
             }
 
 

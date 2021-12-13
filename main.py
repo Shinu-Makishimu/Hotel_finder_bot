@@ -5,7 +5,7 @@ import telebot.types
 from telebot import TeleBot
 from settings import API_TOKEN, commands_list
 from database import check_user, create_user, set_navigate, set_settings, get_navigate, get_settings
-from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard
+from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard, photo_keyboard
 from language import interface
 
 bot = TeleBot(API_TOKEN)
@@ -19,8 +19,9 @@ bot = TeleBot(API_TOKEN)
 # занести в базу положение пользователя в меню
 # показать пользователю что либо
 #
-
-
+# call.message.chat.id # id чата
+#      from_user.id # id юзера
+#
 @bot.message_handler(commands=['start'])
 def start_message(message):
     """
@@ -48,14 +49,7 @@ def start_message(message):
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
-    if not check_user(message=message):
-        create_user(message=message)
-
-    user_id = message.from_user.id
-
-    for i_comm in commands_list:
-        reply += '/' + i_comm + '\n'
-    bot.send_message(user_id, 'this is command menu')
+    bot.send_message(message.from_user.id, 'хелп заглушка')
 
     # TODO: добавить описание команд
 
@@ -99,15 +93,14 @@ def main_handler(call):
     if call.data.endswith('settings'):
         settings_menu(call)
     elif call.data.endswith('low'):
-        set_navigate(message=call, value='lowprice')
         set_settings(user_id=user_id, key='order', value='PRICE')
     elif call.data.endswith('high'):
-        set_navigate(message=call, value='highprice')
         set_settings(user_id=user_id, key='order', value='PRICE_HIGHEST_FIRST')
     elif call.data.endswith("best"):
-        set_navigate(message=call, value='bestdeal')
         set_settings(user_id=user_id, key='order', value='DISTANCE_FROM_LANDMARK')
-    bot.send_message(user_id, 'есть пробитие')
+    set_navigate(message=call, value='city_h')
+    make_dialogue(call)
+
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -119,26 +112,16 @@ def starting_commands(message):
     """
     # TODO: УБРАТЬ ДУБЛИРОВАНИЕ КОДА!!!!!!!!!!!!!!!!!!!!!!!
     user_id = message.from_user.id
-    status = get_navigate(message)
-
-
-    if status == 'new':
-        reply = responses['responses']['default_sett'][language]
-        bot.send_message(user_id, reply)
 
     set_navigate(message=message, value='main')
     if 'lowprice' in message.text:
-        set_navigate(message=message, value='lowprice')
         set_settings(user_id=user_id, key='order', value='PRICE')
     elif 'highprice' in message.text:
-        set_navigate(message=message, value='highprice')
         set_settings(user_id=user_id, key='order', value='PRICE_HIGHEST_FIRST')
     else:
-        set_navigate(message=message, value='bestdeal')
         set_settings(user_id=user_id, key='order', value='DISTANCE_FROM_LANDMARK')
-
-
-    bot.send_message(user_id, 'есть пробитие')
+    set_navigate(message=message, value='city_h')
+    make_dialogue(message)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('set'))
@@ -148,11 +131,11 @@ def callback_settings(call):
     :param call:
     :return:
     """
-    user_id = call.message.chat.id
+    user_id = call.from_user.id
 
-    if call.data == 'set_country':
-        bot.send_message(user_id, 'your country')
-    elif call.data == 'set_money':
+    # if call.data == 'set_country':
+    #     bot.send_message(user_id, 'your country')
+    if call.data == 'set_money':
         bot.send_message(user_id, 'your answer ', reply_markup=money_keyboard)
     elif call.data == 'set_language':
         bot.send_message(user_id, 'your answer ', reply_markup=language_keyboard)
@@ -167,7 +150,7 @@ def callback_money(call):
     :param call:
     :return:
     """
-    user_id = call.message.chat.id
+    user_id = call.from_user.id
     if call.data.endswith('RUB'):
         set_settings(user_id, 'money', 'RUB')
     elif call.data.endswith('USD'):
@@ -187,7 +170,8 @@ def callback_language(call):
     :param call:
     :return:
     """
-    user_id = call.message.chat.id
+    # user_id = call.message.chat.id
+    user_id = call.from_user.id
     lang = ''
 
     if call.data.endswith('RUSS'):
@@ -212,10 +196,35 @@ def callback_cancel(call):
     user_id = call.message.chat.id
     # loc =  get_navigate()
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith('photo'))
+def photo_handler(call):
+    user_id = call.from_user.id
+    order, currency, language = get_settings(call)
+    if call.data.endswith('yes'):
+        bot.send_message(user_id, interface['questions']['photo'][language])
+        # TODO: хранение счетчика фото 0 если не надо.
+    else:
+        set_navigate(message=call, value='no_ph')
 
-def make_dialogue():
+
+
+def make_dialogue(message):
+    user_id = message.from_user.id
     order, currency, language = get_settings(message)
-    reply = interface['questions']['city'][language]
+    status = get_navigate(message)
+    reply = interface['errors']['input'][language]
+    print(f"{user_id}\norder {order}\n curr {currency}\n lang {language}\n stat {status}\n reply {reply}")
+    if status == 'city_h':
+        reply = interface['questions']['city'][language]
+        bot.send_message(user_id, reply)
+    elif status == 'count_h':
+        reply = interface['questions']['count'][language] + '20'
+        bot.send_message(user_id, reply)
+    elif status == 'count_p':
+        reply = interface['questions']['need_photo'][language]
+        bot.send_message(user_id, reply, reply_markup=photo_keyboard)
+
+
 
 
 
@@ -227,10 +236,35 @@ def text_reply(message):
     :return:
     """
     user_id = message.from_user.id
+    order, currency, language = get_settings(message)
     status = get_navigate(message)
-    if status == 1:
-        pass
-    # TODO: найти способ проверить страну на корректность
+    from_user_text = message.text.strip()
+
+    if status == "city_h":
+        if from_user_text.replace(' ', '').replace('-', '').isalpha():
+            # TODO: сделать список городов и место хранения
+            set_navigate(message=message, value='count_h')
+            bot.send_message(user_id, interface['responses']['ok'][language])
+        else:
+            bot.send_message(user_id, interface['errors']['city'][language])
+        make_dialogue(message)
+    elif status == 'count_h':
+        if ' ' not in from_user_text and from_user_text.isdigit() and 0 < int(from_user_text) <= 20:
+            set_navigate(message=message, value='count_p')
+            bot.send_message(user_id, interface['responses']['ok'][language])
+            # TODO: место хранения счетчика отелей
+        else:
+            bot.send_message(user_id, interface['errors']['count'][language])
+        make_dialogue(message)
+    elif status == 'count_p':
+        if ' ' not in from_user_text and from_user_text.isdigit() and 0 < int(from_user_text) <= 5:
+            bot.send_message(user_id,interface['responses']['ok'][language])
+            # TODO: хранение счетчика фоток
+        else:
+            bot.send_message(user_id,interface['errors']['count'][language])
+            make_dialogue(message)
+
+
 
 
 

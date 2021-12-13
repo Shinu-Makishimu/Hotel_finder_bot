@@ -1,11 +1,11 @@
 import telebot
 
-button_country = telebot.types.InlineKeyboardButton(text='country', callback_data='set_country')
+# button_country = telebot.types.InlineKeyboardButton(text='country', callback_data='set_country')
 button_money = telebot.types.InlineKeyboardButton(text='money', callback_data='set_money')
 button_language = telebot.types.InlineKeyboardButton(text='language', callback_data='set_language')
 button_back = telebot.types.InlineKeyboardButton(text='back', callback_data='set_back')
 settings_keyboard = telebot.types.InlineKeyboardMarkup().add(
-    button_country,
+    # button_country,
     button_money,
     button_language,
     button_back
@@ -43,4 +43,11 @@ language_keyboard = telebot.types.InlineKeyboardMarkup().add(
     button_l_rus,
     button_l_eng,
     button_l_spain
+    )
+
+button_yes = telebot.types.InlineKeyboardButton(text='YES', callback_data='photo_yes')
+button_no = telebot.types.InlineKeyboardButton(text='NO', callback_data='photo_no')
+photo_keyboard = telebot.types.InlineKeyboardMarkup().add(
+    button_yes,
+    button_no,
     )

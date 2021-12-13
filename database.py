@@ -15,9 +15,11 @@ user_status = {
     'new': 'first_use',
     'main': 'main menu',
     'sett': 'settings',
-    'lowprice': 'low',
-    'highprice': 'high',
-    'bestdeal': 'diapason',
+    'city_h': 'city where find',
+    'count_h': 'count hotel',
+    'count_p': 'count photo',
+    'no_ph': 'photos not need',
+    'range_p': 'price min and max',
     'history': 'history user'
 }
 
@@ -139,7 +141,7 @@ def get_navigate(message):
     cursor.execute("""SELECT status FROM clients WHERE user_id=:user_id""", {'user_id': user_id})
     response = cursor.fetchone()
     cursor.close()
-    return response
+    return response[0]
 
 
 def get_settings(message) -> list:
