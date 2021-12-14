@@ -4,9 +4,10 @@ import telebot.types
 from telebot import TeleBot
 from settings import API_TOKEN, NAME_DATABASE, commands_list
 from database import check_user_in_redis,create_user_in_redis, set_settings, get_settings, set_navigate, get_navigate,\
-    create_bd_if_not_exist, set_history
+    create_bd_if_not_exist, set_history,get_history_from_db
 from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard, photo_keyboard
 from language import interface
+
 from os import path
 
 bot = TeleBot(API_TOKEN)
@@ -48,6 +49,7 @@ def start_message(message):
     if status == 'new':
         reply += interface['responses']['greeting_new'][language]
     else:
+        set_navigate(msg=message, value='main')
         reply += interface['responses']['greeting_old'][language]
 
     bot.send_message(user_id, reply, reply_markup=main_menu_keyboard)
@@ -97,19 +99,28 @@ def main_handler(call):
     """
     # TODO: УБРАТЬ ДУБЛИРОВАНИЕ КОДА!!!!!!!!!!!!!!!!!!!!!!!
     user_id = call.from_user.id
+    bot.answer_callback_query(call.id)
     if call.data.endswith('settings'):
         settings_menu(call)
+    elif call.data.endswith('hist'):
+        set_settings(msg=call, key='command', value='history')
+        get_history(call)
     elif call.data.endswith('low'):
         set_settings(msg=call, key='command', value='low price')
         set_settings(msg=call, key='order', value='PRICE')
+        set_navigate(msg=call, value='city_h')
+        make_dialogue(call)
     elif call.data.endswith('high'):
         set_settings(msg=call, key='command', value='high price')
         set_settings(msg=call, key='order', value='PRICE_HIGHEST_FIRST')
+        set_navigate(msg=call, value='city_h')
+        make_dialogue(call)
     elif call.data.endswith("best"):
         set_settings(msg=call, key='command', value='best deal')
         set_settings(msg=call, key='order', value='DISTANCE_FROM_LANDMARK')
-    set_navigate(msg=call, value='city_h')
-    make_dialogue(call)
+        set_navigate(msg=call, value='city_h')
+        make_dialogue(call)
+
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -120,20 +131,23 @@ def starting_commands(message):
     :return:
     """
     # TODO: УБРАТЬ ДУБЛИРОВАНИЕ КОДА!!!!!!!!!!!!!!!!!!!!!!!
-    user_id = message.from_user.id
 
     set_navigate(msg=message, value='main')
     if 'lowprice' in message.text:
         set_settings(msg=message, key='command', value='low price')
         set_settings(msg=message, key='order', value='PRICE')
+        set_navigate(msg=message, value='city_h')
+        make_dialogue(message)
     elif 'highprice' in message.text:
         set_settings(msg=message, key='command', value='high price')
         set_settings(msg=message, key='order', value='PRICE_HIGHEST_FIRST')
+        set_navigate(msg=message, value='city_h')
+        make_dialogue(message)
     else:
         set_settings(msg=message, key='command', value='best deal')
         set_settings(msg=message, key='order', value='DISTANCE_FROM_LANDMARK')
-    set_navigate(msg=message, value='city_h')
-    make_dialogue(message)
+        set_navigate(msg=message, value='city_h')
+        make_dialogue(message)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('set'))
@@ -144,6 +158,7 @@ def callback_settings(call):
     :return:
     """
     user_id = call.from_user.id
+    bot.answer_callback_query(call.id)
 
     # if call.data == 'set_country':
     #     bot.send_message(user_id, 'your country')
@@ -163,6 +178,7 @@ def callback_money(call):
     :param call:
     :return:
     """
+    bot.answer_callback_query(call.id)
     user_id = call.from_user.id
     if call.data.endswith('RUB'):
         set_settings(msg=call, key='currency', value='RUB')
@@ -184,6 +200,7 @@ def callback_language(call):
     """
     user_id = call.from_user.id
     lang = ''
+    bot.answer_callback_query(call.id)
 
     if call.data.endswith('RUSS'):
         lang = 'ru'
@@ -210,6 +227,7 @@ def callback_cancel(call):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('photo'))
 def photo_handler(call):
+    bot.answer_callback_query(call.id)
 
     user_id = call.from_user.id
     language = get_settings(msg=call, key='language')
@@ -218,9 +236,11 @@ def photo_handler(call):
         bot.send_message(user_id, interface['questions']['photo'][language])
     else:
         set_settings(msg=call, key='photo_count', value=0)
+        hotel_result(call)
 
 
 def make_dialogue(message):
+    # register_next_step изучить
 
     user_id = message.from_user.id
 
@@ -289,10 +309,25 @@ def hotel_result(message):
     # тут происходит магия показа отелей
     set_navigate(msg=message, value='main')
     set_history(user_id, result)
+    bot.send_message(user_id, 'дно достигнуто')
+
+def choose_date():
+    pass
+
 
 
 def best_deal_dialogue(message):
     #     2. Диапазон цен.
     # 3. Диапазон расстояния, на котором находится отель от центр
     pass
+
+
+def get_history(call):
+    user_id = call.from_user.id
+    ans = get_history_from_db(user_id)
+    for i_element in ans:
+        pass
+    bot.send_message(user_id, ans)
+
+
 bot.infinity_polling()

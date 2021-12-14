@@ -9,10 +9,11 @@ from settings import NAME_DATABASE, redis_db
 # new новый нюфаг
 # main главное меню
 # sett настройки
+# history история
 # city_h город поиска
 # count_h количество результатов в выдаче
 # count_p количество фото в одной выдаче
-#
+# calendar очередь показывать календарь
 #
 #
 #
@@ -121,23 +122,9 @@ def set_settings_in_db(user_id, key, value):
 
 
 def create_history_record(user_id, hist_dict):
-    """
-            user_id INTEGER PRIMARY KEY NOT NULL,
-        command TEXT,
-        price TEXT,
-        city TEXT,
-        hotel_count TEXT,
-        photo_count INTEGER,
-        date REAL,
-        hotels TEXT);
-    :param user_id:
-    :return:
-
-
-    """
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
-        request = """INSERT INTO requests VALUES (?,?,?,?,?,?,?,?) """
+        request = """INSERT INTO requests VALUES (NULL,?,?,?,?,?,?,?,?) """
         cursor.execute(
             request,
             (
@@ -152,6 +139,15 @@ def create_history_record(user_id, hist_dict):
             )
         )
         db.commit()
+
+def get_history_from_db(user_id):
+    with sqlite3.connect(NAME_DATABASE) as db:
+        cursor = db.cursor()
+        cursor.execute("""SELECT * FROM requests WHERE user_id=:user_id""",
+                       {'user_id': user_id})
+        response = cursor.fetchall()
+        print(f'хистори\n{response}')
+        return response
 
 #################################### секция redis ####################################
 
@@ -198,9 +194,6 @@ def create_user_in_redis(msg):
 def set_settings(msg, key, value):
     user_id = msg.from_user.id
 
-    # if not check_user_in_redis(msg):
-    #     create_user_in_redis(msg)
-
     if key == 'language':
         set_settings_in_db(user_id, key, value)
         redis_db.hset(user_id, mapping={'language': value})
@@ -225,8 +218,6 @@ def set_settings(msg, key, value):
 
 
 def get_settings(msg, key=False):
-    # if not check_user_in_redis(msg):
-    #     create_user_in_redis(msg)
 
     user_id = msg.from_user.id
 
@@ -247,8 +238,6 @@ def get_settings(msg, key=False):
 
 
 def set_navigate(msg, value):
-    # if not check_user_in_redis(msg):
-    #     create_user_in_redis(msg)
 
     user_id = msg.from_user.id
 
@@ -256,8 +245,6 @@ def set_navigate(msg, value):
 
 
 def get_navigate(msg):
-    # if not check_user_in_redis(msg):
-    #     create_user_in_redis(msg)
 
     user_id = msg.from_user.id
     result = redis_db.hget(user_id, 'status')
@@ -274,10 +261,8 @@ def set_history(user_id, result):
     """
 
     # get_timestamp, get_date
-
-
-    y,m,d = [int(i) for i in str(datetime.datetime.now().date()).split('-')]
-    date = get_timestamp(y,m,d)
+    y, m, d = [int(i) for i in str(datetime.datetime.now().date()).split('-')]
+    date = get_timestamp(y, m, d)
     result_from_redis = redis_db.hgetall(user_id)
 
     # подготовка данных к запихиванию в sql
@@ -292,12 +277,6 @@ def set_history(user_id, result):
     redis_db.delete(user_id)
 
 
-
-
-
-
-def get_history(user_id):
-    pass
 
 #################################################################################
 # some buffer

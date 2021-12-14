@@ -11,7 +11,7 @@ H_API_TOKEN = config('APIKEY')
 HOST = 'hotels4.p.rapidapi.com'
 url = "https://hotels4.p.rapidapi.com/locations/v2/search"
 
-NAME_DATABASE = 'bot_v2.db'
+NAME_DATABASE = 'bot.db'
 
 redis_db = redis.StrictRedis(host='localhost', port=6379, db=1, charset='utf-8', decode_responses=True)
 
