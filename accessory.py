@@ -1,4 +1,6 @@
 import re
+import datetime
+
 
 def check_message(message):
 
@@ -57,3 +59,12 @@ def rating(rating, message):
     if not rating:
         return ('no_information', message)
     return '⭐' * int(rating)
+
+
+def get_timestamp(y,m,d):
+
+    return datetime.datetime.timestamp(datetime.datetime(y,m,d))
+
+
+def get_date(tmstmp):
+    return datetime.datetime.fromtimestamp(tmstmp).date()
