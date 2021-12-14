@@ -1,14 +1,24 @@
 import sqlite3
 import datetime
-import redis
 import re
 from accessory import get_timestamp, get_date
-from settings import NAME_DATABASE
+from settings import NAME_DATABASE, redis_db
 
-redis_db = redis.StrictRedis(host='localhost', port=6379, db=1, charset='utf-8', decode_responses=True)
+#
+# памятка состояний навигации
+# new новый нюфаг
+# main главное меню
+# sett настройки
+# city_h город поиска
+# count_h количество результатов в выдаче
+# count_p количество фото в одной выдаче
+#
+#
+#
+#
+#################################### секция sqlite3 ####################################
 
 
-# секция хорошего, годного sqlite3
 def create_bd_if_not_exist():
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -22,7 +32,8 @@ def create_bd_if_not_exist():
         FOREIGN KEY (user_id) REFERENCES requests (user_id)
         );"""
         query_2 = """CREATE TABLE IF NOT EXISTS requests(
-        user_id INTEGER PRIMARY KEY NOT NULL,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
         command TEXT,
         price TEXT,
         city TEXT,
@@ -66,7 +77,7 @@ def check_user_in_db(message):
     :param message:
     :return:
     """
-
+    print('проверка в скулайт')
     user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
 
     with sqlite3.connect(NAME_DATABASE, check_same_thread=False) as db:
@@ -75,19 +86,21 @@ def check_user_in_db(message):
         response = cursor.fetchone()
 
     if response is None:
+        print('проверка в скулайт не прошла')
         return False
     else:
+        print('проверка в скулайт прошла')
         return True
 
 
 def get_user_from_bd(message):
     user_id = message.from_user.id
-
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
         cursor.execute("""SELECT * FROM clients WHERE user_id=:user_id""",
                        {'user_id': user_id})
         response = cursor.fetchall()
+        print(f'получаем инфу из скулайт\n{response[0]}')
         return response[0]
 
 
@@ -107,7 +120,40 @@ def set_settings_in_db(user_id, key, value):
         db.commit()
 
 
-# секция shit-redis
+def create_history_record(user_id, hist_dict):
+    """
+            user_id INTEGER PRIMARY KEY NOT NULL,
+        command TEXT,
+        price TEXT,
+        city TEXT,
+        hotel_count TEXT,
+        photo_count INTEGER,
+        date REAL,
+        hotels TEXT);
+    :param user_id:
+    :return:
+
+
+    """
+    with sqlite3.connect(NAME_DATABASE) as db:
+        cursor = db.cursor()
+        request = """INSERT INTO requests VALUES (?,?,?,?,?,?,?,?) """
+        cursor.execute(
+            request,
+            (
+                user_id,
+                hist_dict['command'],
+                hist_dict['order'],
+                hist_dict['city'],
+                hist_dict['hotel_count'],
+                hist_dict['photo_count'],
+                hist_dict['date'],
+                hist_dict['hotels']
+            )
+        )
+        db.commit()
+
+#################################### секция redis ####################################
 
 
 def check_user_in_redis(msg):
@@ -118,29 +164,42 @@ def check_user_in_redis(msg):
     :param message:
     :return:
     """
-
+    print('проверка в редисе')
     user_id = msg.from_user.id
-    result_in_redis = redis_db.hget(user_id, 'status')  # если ключа нет, вернёт нан
-    date = str(datetime.datetime.now().date()).split('-')
-    y, m, d = date
+    # result_in_redis = redis_db.hget(user_id, 'status')  # если ключа нет, вернёт нан
+    result_in_redis = redis_db.hgetall(user_id)
+    if len(result_in_redis) == 0:
+        print('проверка в редисе не прошла')
+        return False
+    else:
+        print('проверка в редисе прошла')
+        return True
 
-    if result_in_redis is None:
-        if not check_user_in_db(msg):
-            create_user_in_db(msg)
-        user_id, language, currency, status = get_user_from_bd(msg)
-        redis_db.hset(user_id, mapping={'language': language})
-        redis_db.hset(user_id, mapping={'currency': currency})
-        redis_db.hset(user_id, mapping={'status': status})
-        redis_db.hset(user_id, mapping={'city': ''})
-        redis_db.hset(user_id, mapping={'hotel_count': ''})
-        redis_db.hset(user_id, mapping={'photo_count': ''})
-        redis_db.hset(user_id, mapping={'order': ''})
-        redis_db.hset(user_id, mapping={'date': get_timestamp(y, m, d)})
+
+def create_user_in_redis(msg):
+    """
+    :param msg:
+    :return:
+    """
+    if not check_user_in_db(message=msg):
+        create_user_in_db(message=msg)
+    user_id, language, currency, status = get_user_from_bd(msg)
+    redis_db.hset(user_id, mapping={'language': language})
+    redis_db.hset(user_id, mapping={'currency': currency})
+    redis_db.hset(user_id, mapping={'status': status})
+    redis_db.hset(user_id, mapping={'command': ' '})
+    redis_db.hset(user_id, mapping={'order': ' '})
+    redis_db.hset(user_id, mapping={'city': ' '})
+    redis_db.hset(user_id, mapping={'hotel_count': ' '})
+    redis_db.hset(user_id, mapping={'photo_count': ' '})
+    print('создался пользователь в редисе')
 
 
 def set_settings(msg, key, value):
     user_id = msg.from_user.id
-    check_user_in_redis(msg)
+
+    # if not check_user_in_redis(msg):
+    #     create_user_in_redis(msg)
 
     if key == 'language':
         set_settings_in_db(user_id, key, value)
@@ -159,32 +218,37 @@ def set_settings(msg, key, value):
         redis_db.hset(user_id, mapping={'photo_count': value})
     elif key == 'order':
         redis_db.hset(user_id, mapping={'order': value})
-
-
-
+    elif key == 'command':
+        redis_db.hset(user_id, mapping={'command': value})
+    else:
+        print(f'команда {key} со значение {value} не найдена')
 
 
 def get_settings(msg, key=False):
+    # if not check_user_in_redis(msg):
+    #     create_user_in_redis(msg)
+
     user_id = msg.from_user.id
-    check_user_in_redis(msg)
-    result = \
-        {
-            'language': re.search(r'\w+', str(redis_db.hget(user_id, 'language'))[2:])[0],
-            'currency': re.search(r'\w+', str(redis_db.hget(user_id, 'currency'))[2:])[0],
-            'status': re.search(r'\w+', str(redis_db.hget(user_id, 'status'))[2:])[0],
-            'city': re.search(r'\w+', str(redis_db.hget(user_id, 'city'))[2:])[0],
-            'hotel_count': re.search(r'\w+', str(redis_db.hget(user_id, 'hotel_count'))[2:])[0],
-            'photo_count': re.search(r'\w+', str(redis_db.hget(user_id, 'photo_count'))[2:])[0],
-            'order': re.search(r'\w+', str(redis_db.hget(user_id, 'order'))[2:])[0],
-        }
-    if key and key in result.keys():
-        return result[key]
-    return result
+
+    if key == 'language':
+        return redis_db.hget(user_id, 'language')
+    elif key == 'currency':
+        return redis_db.hget(user_id, 'currency')
+    elif key == 'status':
+        return redis_db.hget(user_id, 'status')
+    elif key == 'city':
+        return redis_db.hget(user_id, 'city')
+    elif key == 'hotel_count':
+        return redis_db.hget(user_id, 'hotel_count')
+    elif key == 'photo_count':
+        return redis_db.hget(user_id, 'photo_count')
+    elif key == 'order':
+        return redis_db.hget(user_id, 'order')
 
 
 def set_navigate(msg, value):
-
-    check_user_in_redis(msg)
+    # if not check_user_in_redis(msg):
+    #     create_user_in_redis(msg)
 
     user_id = msg.from_user.id
 
@@ -192,23 +256,64 @@ def set_navigate(msg, value):
 
 
 def get_navigate(msg):
-    check_user_in_redis(msg)
+    # if not check_user_in_redis(msg):
+    #     create_user_in_redis(msg)
 
     user_id = msg.from_user.id
     result = redis_db.hget(user_id, 'status')
-    return re.search(r'\w+', str(result)[2:])[0]
+    return result
+    # return re.search(r'\w+', str(result)[2:])[0]
 
 
-def set_history(user_id):
-    pass
+def set_history(user_id, result):
+    """
+    {'command': 'low price', 'city': 'Выборг', 'hotel_count': '12', 'photo_count': '3', 'order': 'PRICE', 'date': 1639429200.0, 'hotels': 'ссылка1*ссылка2*ссылка*3'}
+    :param user_id:
+    :param result:
+    :return:
+    """
+
+    # get_timestamp, get_date
+
+
+    y,m,d = [int(i) for i in str(datetime.datetime.now().date()).split('-')]
+    date = get_timestamp(y,m,d)
+    result_from_redis = redis_db.hgetall(user_id)
+
+    # подготовка данных к запихиванию в sql
+    result_from_redis.update({'date': date})
+    result_from_redis.update({'hotels': result})
+    del result_from_redis['language']
+    del result_from_redis['currency']
+    del result_from_redis['status']
+
+    create_history_record(user_id=user_id, hist_dict=result_from_redis)
+
+    redis_db.delete(user_id)
+
+
+
+
 
 
 def get_history(user_id):
     pass
 
-
 #################################################################################
 # some buffer
+
+# result = {
+#         'language': re.search(r'\w+', str(redis_db.hget(user_id, 'language'))[2:])[0],
+#         'currency': re.search(r'\w+', str(redis_db.hget(user_id, 'currency'))[2:])[0],
+#         'status': re.search(r'\w+', str(redis_db.hget(user_id, 'status'))[2:])[0],
+#         'city': re.search(r'\w+', str(redis_db.hget(user_id, 'city'))[2:])[0],
+#         'hotel_count': re.search(r'\w+', str(redis_db.hget(user_id, 'hotel_count'))[2:])[0],
+#         'photo_count': re.search(r'\w+', str(redis_db.hget(user_id, 'photo_count'))[2:])[0],
+#         'order': re.search(r'\w+', str(redis_db.hget(user_id, 'order'))[2:])[0],
+#     }
+# if key and key in result.keys():
+#     return result[key]
+# return result
 
 
 # def load_user_in_redis(msg):

@@ -3,8 +3,8 @@ import functools
 import telebot.types
 from telebot import TeleBot
 from settings import API_TOKEN, NAME_DATABASE, commands_list
-from database import check_user_in_redis, set_settings, get_settings, set_navigate, get_navigate,\
-    create_bd_if_not_exist
+from database import check_user_in_redis,create_user_in_redis, set_settings, get_settings, set_navigate, get_navigate,\
+    create_bd_if_not_exist, set_history
 from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard, photo_keyboard
 from language import interface
 from os import path
@@ -35,7 +35,8 @@ def start_message(message):
     :return:
     """
 
-    check_user_in_redis(message)
+    if not check_user_in_redis(msg=message):
+        create_user_in_redis(msg=message)
 
     user_id = message.from_user.id
     person = f' {message.from_user.first_name} {message.from_user.last_name}!\n'
@@ -99,10 +100,13 @@ def main_handler(call):
     if call.data.endswith('settings'):
         settings_menu(call)
     elif call.data.endswith('low'):
+        set_settings(msg=call, key='command', value='low price')
         set_settings(msg=call, key='order', value='PRICE')
     elif call.data.endswith('high'):
+        set_settings(msg=call, key='command', value='high price')
         set_settings(msg=call, key='order', value='PRICE_HIGHEST_FIRST')
     elif call.data.endswith("best"):
+        set_settings(msg=call, key='command', value='best deal')
         set_settings(msg=call, key='order', value='DISTANCE_FROM_LANDMARK')
     set_navigate(msg=call, value='city_h')
     make_dialogue(call)
@@ -120,10 +124,13 @@ def starting_commands(message):
 
     set_navigate(msg=message, value='main')
     if 'lowprice' in message.text:
+        set_settings(msg=message, key='command', value='low price')
         set_settings(msg=message, key='order', value='PRICE')
     elif 'highprice' in message.text:
+        set_settings(msg=message, key='command', value='high price')
         set_settings(msg=message, key='order', value='PRICE_HIGHEST_FIRST')
     else:
+        set_settings(msg=message, key='command', value='best deal')
         set_settings(msg=message, key='order', value='DISTANCE_FROM_LANDMARK')
     set_navigate(msg=message, value='city_h')
     make_dialogue(message)
@@ -158,11 +165,11 @@ def callback_money(call):
     """
     user_id = call.from_user.id
     if call.data.endswith('RUB'):
-        set_settings(msg=call, key='money', value='RUB')
+        set_settings(msg=call, key='currency', value='RUB')
     elif call.data.endswith('USD'):
-        set_settings(msg=call, key='money', value='USD')
+        set_settings(msg=call, key='currency', value='USD')
     elif call.data.endswith('EUR'):
-        set_settings(msg=call, key='money', value='EUR')
+        set_settings(msg=call, key='currency', value='EUR')
     else:
         settings_menu(call)
     settings_menu(call)
@@ -222,8 +229,6 @@ def make_dialogue(message):
     status = get_navigate(msg=message)
     reply = interface['errors']['input'][language]
 
-    print(f"{user_id}\norder {order}\n lang {language}\n stat {status}\n reply {reply}")
-
     if status == 'city_h':
         reply = interface['questions']['city'][language]
         bot.send_message(user_id, reply)
@@ -244,13 +249,12 @@ def text_reply(message):
     """
     user_id = message.from_user.id
     language = get_settings(msg=message, key='language')
-    # order = get_settings(msg=message, key='order')
     status = get_navigate(msg=message)
     from_user_text = message.text.strip()
 
     if status == "city_h":
         if from_user_text.replace(' ', '').replace('-', '').isalpha():
-            # TODO: сделать список городов и место хранения
+            set_settings(msg=message, key='city', value=from_user_text)
             set_navigate(msg=message, value='count_h')
             bot.send_message(user_id, interface['responses']['ok'][language])
         else:
@@ -258,19 +262,37 @@ def text_reply(message):
         make_dialogue(message)
     elif status == 'count_h':
         if ' ' not in from_user_text and from_user_text.isdigit() and 0 < int(from_user_text) <= 20:
+            set_settings(msg=message, key='hotel_count', value=from_user_text)
             set_navigate(msg=message, value='count_p')
             bot.send_message(user_id, interface['responses']['ok'][language])
-            # TODO: место хранения счетчика отелей
         else:
             bot.send_message(user_id, interface['errors']['count'][language])
         make_dialogue(message)
     elif status == 'count_p':
         if ' ' not in from_user_text and from_user_text.isdigit() and 0 < int(from_user_text) <= 5:
+            set_settings(msg=message, key='photo_count', value=from_user_text)
             bot.send_message(user_id, interface['responses']['ok'][language])
-            # TODO: хранение счетчика фоток
+            order = get_settings(msg=message, key='order')
+            if order == 'DISTANCE_FROM_LANDMARK':
+                best_deal_dialogue(message)
+            hotel_result(message)
+
         else:
             bot.send_message(user_id, interface['errors']['count'][language])
             make_dialogue(message)
 
 
+def hotel_result(message):
+    user_id = message.from_user.id
+    # тут происходит магия поиска и возврата отелей
+    result = 'ссылка1*ссылка2*ссылка*3'
+    # тут происходит магия показа отелей
+    set_navigate(msg=message, value='main')
+    set_history(user_id, result)
+
+
+def best_deal_dialogue(message):
+    #     2. Диапазон цен.
+    # 3. Диапазон расстояния, на котором находится отель от центр
+    pass
 bot.infinity_polling()
