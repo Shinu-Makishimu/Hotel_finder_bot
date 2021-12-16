@@ -11,10 +11,10 @@ settings_keyboard = telebot.types.InlineKeyboardMarkup().add(
     button_back
     )
 
-button_lowprice = telebot.types.InlineKeyboardButton(text='Low price', callback_data='main_low')
-button_bestdeal = telebot.types.InlineKeyboardButton(text='Best deal', callback_data='main_best')
-button_highprice = telebot.types.InlineKeyboardButton(text='High price', callback_data='main_high')
-button_history = telebot.types.InlineKeyboardButton(text='My history', callback_data='main_hist')
+button_lowprice = telebot.types.InlineKeyboardButton(text='Low price', callback_data='main_lowprice')
+button_bestdeal = telebot.types.InlineKeyboardButton(text='Best deal', callback_data='main_bestdeal')
+button_highprice = telebot.types.InlineKeyboardButton(text='High price', callback_data='main_highprice')
+button_history = telebot.types.InlineKeyboardButton(text='My history', callback_data='main_history')
 button_settings = telebot.types.InlineKeyboardButton(text='Settings', callback_data='main_settings')
 
 main_menu_keyboard = telebot.types.InlineKeyboardMarkup().add(

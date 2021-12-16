@@ -4,6 +4,8 @@ import re
 from accessory import get_timestamp, get_date
 from settings import NAME_DATABASE, redis_db
 from loguru import logger
+
+
 #
 # памятка состояний навигации
 # new новый нюфаг
@@ -50,11 +52,7 @@ def create_bd_if_not_exist():
         db.commit()
 
 
-def create_user_in_db(message):
-
-
-    user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
-    language = message.from_user.language_code  # выделить локализацию пользователя,
+def create_user_in_db(user_id, language):
     logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
     currency = 'RUB'
     status = 'new'
@@ -76,34 +74,30 @@ def create_user_in_db(message):
         db.commit()
 
 
-def check_user_in_db(message):
+def check_user_in_db(user_id):
     """
     проверка наличия присутствия пользователя в бд. )
     :param message:
     :return:
     """
-    user_id = message.from_user.id  # выделить пользовательский id из объекта сообщения
 
-    logger.info(f'Function {check_user_in_db.__name__} called and use args: user_id{user_id}')
-
+    logger.info(f'Function {check_user_in_db.__name__} called and use args: user_id\t{user_id}')
 
     with sqlite3.connect(NAME_DATABASE, check_same_thread=False) as db:
         cursor = db.cursor()
         cursor.execute("""SELECT user_id FROM clients WHERE user_id=:user_id""", {'user_id': user_id})
         response = cursor.fetchone()
 
-    logger.info(f'Result checking for user {user_id}: {response}')
     if response is None:
+        logger.info(f"user wasn't found")
         return False
     else:
+        logger.info(f"user was found")
         return True
 
 
-def get_user_from_bd(message):
-
-
-    user_id = message.from_user.id
-    logger.info(f'Function {get_user_from_bd.__name__} called use args: user_id{user_id}')
+def get_user_from_bd(user_id):
+    logger.info(f'Function {get_user_from_bd.__name__} called use args: user_id\t{user_id}')
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
         cursor.execute("""SELECT * FROM clients WHERE user_id=:user_id""",
@@ -167,14 +161,10 @@ def get_history_from_db(user_id):
         return response
 
 
-
-
-
-
 #################################### секция redis ####################################
 
 
-def check_user_in_redis(msg):
+def check_user_in_redis(user_id):
     """
     проверка наличия присутствия пользователя.
     сначала проверяем в редисе, если в редисе нет, проверяем в sqlite. если в sqlite нет, то создаём пользователя
@@ -183,44 +173,45 @@ def check_user_in_redis(msg):
     :return:
     """
 
-    user_id = msg.from_user.id
-    logger.info(f'Function {check_user_in_redis.__name__} called use args: user_id{user_id}')
+    logger.info(f'Function {check_user_in_redis.__name__} called use args: user_id\t{user_id}')
 
     result_in_redis = redis_db.hgetall(user_id)
-    logger.info(f'Checking result: {result_in_redis}')
+
     if len(result_in_redis) == 0:
+        logger.info(f"user wasn't found")
         return False
     else:
+        logger.info(f"user was found")
         return True
 
 
-def create_user_in_redis(msg):
+def create_user_in_redis(user_id, language,first_name,last_name):
     """
     :param msg:
     :return:
     """
-    logger.info(f'Function {create_user_in_redis.__name__} called')
-
-    if not check_user_in_db(message=msg):
-        create_user_in_db(message=msg)
-    user_id, language, currency, status = get_user_from_bd(msg)
+    logger.info(f'Function {create_user_in_redis.__name__} called with args: '
+                f'user_id{user_id}, language {language}, first name {first_name}, last name {last_name}')
+    if not check_user_in_db(user_id=user_id):
+        create_user_in_db(user_id=user_id, language=language)
+    user_id, language, currency, status = get_user_from_bd(user_id=user_id)
     redis_db.hset(user_id, mapping={'language': language})
     redis_db.hset(user_id, mapping={'currency': currency})
     redis_db.hset(user_id, mapping={'status': status})
-    #всё остальное можно и убрать
-    redis_db.hset(user_id, mapping={'command': ' '})
-    redis_db.hset(user_id, mapping={'order': ' '})
-    redis_db.hset(user_id, mapping={'city': ' '})
-    redis_db.hset(user_id, mapping={'hotel_count': ' '})
-    redis_db.hset(user_id, mapping={'photo_count': ' '})
-    redis_db.hset(user_id, mapping={'date1': ' '})
-    redis_db.hset(user_id, mapping={'date2': ' '})
+    redis_db.hset(user_id, mapping={'first_name': first_name})
+    redis_db.hset(user_id, mapping={'last_name': last_name})
+    # всё остальное можно и убрать
+    # redis_db.hset(user_id, mapping={'command': ' '})
+    # redis_db.hset(user_id, mapping={'order': ' '})
+    # redis_db.hset(user_id, mapping={'city': ' '})
+    # redis_db.hset(user_id, mapping={'hotel_count': ' '})
+    # redis_db.hset(user_id, mapping={'photo_count': ' '})
+    # redis_db.hset(user_id, mapping={'date1': ' '})
+    # redis_db.hset(user_id, mapping={'date2': ' '})
+    logger.info(f'{user_id} created ')
 
-    print('создался пользователь в редисе')
 
-
-def set_settings(msg, key, value):
-    user_id = msg.from_user.id
+def set_settings(user_id, key, value):
     logger.info(f'Function {set_settings_in_db.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}\tvaluse {value}')
 
@@ -248,52 +239,28 @@ def set_settings(msg, key, value):
     elif key == 'date2':
         redis_db.hset(user_id, mapping={'date2': value})
     else:
-        logger.info(f'Command {key} with {value} not found')
+        logger.warning(f'Command {key} with {value} not found')
 
 
-def get_settings(msg, key=False):
-    user_id = msg.from_user.id
-
+def get_settings(user_id, key=False):
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}')
 
-
-
-    if key == 'language':
-        return redis_db.hget(user_id, 'language')
-    elif key == 'currency':
-        return redis_db.hget(user_id, 'currency')
-    elif key == 'status':
-        return redis_db.hget(user_id, 'status')
-    elif key == 'city':
-        return redis_db.hget(user_id, 'city')
-    elif key == 'hotel_count':
-        return redis_db.hget(user_id, 'hotel_count')
-    elif key == 'photo_count':
-        return redis_db.hget(user_id, 'photo_count')
-    elif key == 'order':
-        return redis_db.hget(user_id, 'order')
-    elif key == 'date1':
-        return redis_db.hget(user_id, 'date1')
-    elif key == 'date2':
-        return redis_db.hget(user_id, 'date2')
+    if key in redis_db.hgetall(user_id).keys():
+        logger.info(f'Function {get_settings.__name__} completed successfully')
+        return redis_db.hget(user_id, key)
     else:
-        logger.info(f'Command key {key}')
-        return redis_db.hgetall(user_id)
+        logger.warning(f'Command key {key}')
 
 
-def set_navigate(msg, value):
-    user_id = msg.from_user.id
-
+def set_navigate(user_id, value):
     logger.info(f'Function {set_navigate.__name__} called with argument: '
                 f'user_id {user_id}\tvalue{value}')
 
     redis_db.hset(user_id, mapping={'status': value})
 
 
-def get_navigate(msg):
-
-    user_id = msg.from_user.id
+def get_navigate(user_id):
     logger.info(f'Function {get_navigate.__name__} called with argument: '
                 f'user_id {user_id}')
     result = redis_db.hget(user_id, 'status')
@@ -326,7 +293,8 @@ def set_history(user_id, result):
     redis_db.delete(user_id)
 
 
-def kill_user(message):
-    logger.info(f'Function {kill_user.__name__} called')
-    if check_user_in_redis(msg=message):
-        redis_db.delete(message.from_user.id)
+def kill_user(user_id):
+    logger.info(f'Function {kill_user.__name__} called with arg {user_id}')
+    if check_user_in_redis(user_id):
+        redis_db.delete(user_id)
+        logger.info(f'{user_id} was killed')
