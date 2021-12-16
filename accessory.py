@@ -1,6 +1,6 @@
 import re
 import datetime
-
+from loguru import logger
 
 def check_message(message):
 
@@ -44,6 +44,8 @@ def address(hotel, message):
     :return: hotel address
     """
     message = ('no_information', message)
+    logger.info(f'Function {address.__name__} called with argument: hotel {hotel}')
+
     if hotel.get('address'):
         result = hotel.get('address').get('streetAddress', message)
     return message
@@ -62,9 +64,11 @@ def rating(rating, message):
 
 
 def get_timestamp(y,m,d):
-
+    logger.info(f'Function {get_timestamp.__name__} called with argument:year {y} month{m} day{d}')
     return datetime.datetime.timestamp(datetime.datetime(y,m,d))
 
 
 def get_date(tmstmp):
+    logger.info(f'Function {get_date.__name__} called with argument: {tmstmp}')
+
     return datetime.datetime.fromtimestamp(tmstmp).date()

@@ -39,6 +39,10 @@ interface = {
                 'ru': 'Нет данных',
                 'en': 'No information'
             },
+            'date': {
+                'ru': 'Дата въезда больше даты выезда',
+                'en': 'Check-in date is greater than check-out date'
+            }
         },
     'questions':
         {
@@ -73,6 +77,14 @@ interface = {
             'need_photo': {
                 'ru': 'Нужны фотографии отеля?',
                 'en': 'Do you nedd photos?'
+            },
+            'date1': {
+                'ru': 'Выберите дату заезда',
+                'en': "Select check-in date"
+            },
+            'date2': {
+                'ru': 'Выберите дату выезда',
+                'en': "Select check-out date"
             }
         },
     'buttons':

@@ -1,6 +1,7 @@
 from decouple import config
 import redis
 
+
 content_type_ANY = ['audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'caption']
 
 commands_list = ['start','lowprice', 'highprice', 'bestdeal', 'settings']
@@ -17,3 +18,14 @@ redis_db = redis.StrictRedis(host='localhost', port=6379, db=1, charset='utf-8',
 
 excluded_types = ['audio', 'document', 'photo', 'sticker', 'video', 'voice']  # список непринимаемых типов данных.
 
+logger_config = {
+    "handlers": [
+        {
+            "sink": "logs/bot.log",
+            "format": "{time} | {level} | {message}",
+            "encoding": "utf-8",
+            "level": "DEBUG",
+            "rotation": "5 MB"
+        },
+    ],
+}
