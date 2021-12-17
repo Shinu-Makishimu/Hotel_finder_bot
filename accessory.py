@@ -72,3 +72,10 @@ def get_date(tmstmp):
     logger.info(f'Function {get_date.__name__} called with argument: {tmstmp}')
 
     return datetime.datetime.fromtimestamp(tmstmp).date()
+
+
+def check_dates(check_in, check_out):
+    if float(check_in) >= float(check_out):
+        return False
+    else:
+        return True

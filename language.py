@@ -42,6 +42,10 @@ interface = {
             'date': {
                 'ru_RU': 'Дата въезда больше даты выезда',
                 'en_US': 'Check-in date is greater than check-out date'
+            },
+            'city_not_found': {
+                'ru_RU': 'Запрошенный город не найден',
+                'en_US': 'The requested city was not found.'
             }
         },
     'questions':
@@ -184,6 +188,14 @@ interface = {
             'ok': {
                 'ru_RU': 'Принято',
                 'en_US': 'Ok'
+            },
+            'check_in': {
+                'ru_RU': 'Дата заезда',
+                'en_US': 'check-in date'
+            },
+            'check_out': {
+                'ru_RU': 'Дата выезда',
+                'en_US': 'check out date'
             }
 
 

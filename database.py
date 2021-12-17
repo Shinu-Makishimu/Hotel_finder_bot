@@ -213,44 +213,20 @@ def create_user_in_redis(user_id, language,first_name,last_name):
 
 
 def set_settings(user_id, key, value):
-    logger.info(f'Function {set_settings_in_db.__name__} called with arguments: '
+    logger.info(f'Function {set_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}\tvaluse {value}')
-
-    if key == 'language':
+    if key in ['language', 'currency','status']:
         set_settings_in_db(user_id, key, value)
-        redis_db.hset(user_id, mapping={'language': value})
-    elif key == 'currency':
-        set_settings_in_db(user_id, key, value)
-        redis_db.hset(user_id, mapping={'currency': value})
-    elif key == 'status':
-        set_settings_in_db(user_id, key, value)
-        redis_db.hset(user_id, mapping={'status': value})
-    elif key == 'city':
-        redis_db.hset(user_id, mapping={'city': value})
-    elif key == 'hotel_count':
-        redis_db.hset(user_id, mapping={'hotel_count': value})
-    elif key == 'photo_count':
-        redis_db.hset(user_id, mapping={'photo_count': value})
-    elif key == 'order':
-        redis_db.hset(user_id, mapping={'order': value})
-    elif key == 'command':
-        redis_db.hset(user_id, mapping={'command': value})
-    elif key == 'date1':
-        redis_db.hset(user_id, mapping={'date1': value})
-    elif key == 'date2':
-        redis_db.hset(user_id, mapping={'date2': value})
-    else:
-        logger.warning(f'Command {key} with {value} not found')
+    redis_db.hset(user_id, mapping={key: value})
 
 
 def get_settings(user_id, key=False):
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}')
-    if key in redis_db.hgetall(user_id).keys():
-        logger.info(f'Function {get_settings.__name__} completed successfully')
-        return redis_db.hget(user_id, key)
-    else:
-        logger.warning(f'Command key {key}')
+    if key not in redis_db.hgetall(user_id).keys():
+        logger.info(f'Key {key} not found in redis! return {redis_db.hget(user_id, key)}')
+    return redis_db.hget(user_id, key)
+
 
 
 def set_navigate(user_id, value):
