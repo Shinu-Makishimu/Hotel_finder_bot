@@ -1,13 +1,13 @@
 import requests
 import re
 from database import get_settings
+from loguru import logger
 from settings import API_TOKEN
 
 
 def make_locations_list(message) -> dict:
-
+    logger.info(f'function {make_locations_list.__name__} was called with message')
     data = request_locations(message)
-    print(data)
     if not data:
         return {'bad_request': 'bad_request'}
     locations = dict()
@@ -20,13 +20,12 @@ def make_locations_list(message) -> dict:
 
 
 def request_locations(message):
-    url = "https://hotels4.p.rapidapi.com/locations/v2/search"
-    language = get_settings(message, 'language')
 
-    if language != 'ru':
-        language = 'en_US'
-    else:
-        language= 'ru_RU'
+    url = "https://hotels4.p.rapidapi.com/locations/v2/search"
+    language = get_settings(user_id=message.from_user.id, key='language')
+    logger.info(f'function {request_locations.__name__} was called with message and use args: '
+                f'lang: {language}\t text: {message.text}')
+
     querystring = {
         "query": message.text.strip(),
         "locale": language
@@ -49,6 +48,7 @@ def request_locations(message):
 
 
 def delete_tags(html_text):
+    logger.info(f'function {delete_tags.__name__} was called')
     text = re.sub('<([^<>]*)>', '', html_text)
     return text
 

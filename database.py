@@ -9,6 +9,7 @@ from loguru import logger
 #
 # памятка состояний навигации
 # new новый нюфаг
+# old олдфаг
 # main главное меню
 # sett настройки
 # history история
@@ -19,6 +20,11 @@ from loguru import logger
 #
 #
 #
+
+language_dict= {
+    'ru': 'ru_RU',
+    'en': 'en_US'
+}
 #################################### секция sqlite3 ####################################
 
 
@@ -56,8 +62,8 @@ def create_user_in_db(user_id, language):
     logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
     currency = 'RUB'
     status = 'new'
-    if language != 'ru':
-        language = 'en'
+    if language != 'ru_RU':
+        language = 'en_US'
         currency = 'EUR'
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -89,10 +95,10 @@ def check_user_in_db(user_id):
         response = cursor.fetchone()
 
     if response is None:
-        logger.info(f"user wasn't found")
+        logger.info(f"user wasn't found in sqlite")
         return False
     else:
-        logger.info(f"user was found")
+        logger.info(f"user was found in sqlite")
         return True
 
 
@@ -119,7 +125,7 @@ def set_settings_in_db(user_id, key, value):
         elif key == 'currency':
             request = """UPDATE clients SET currency = ? WHERE user_id = ?"""
         elif key == 'status':
-            request = """UPDATE clients SET key = ? WHERE user_id = ?"""
+            request = """UPDATE clients SET status = ? WHERE user_id = ?"""
 
         data = (value, user_id)
         cursor.execute(request, data)
@@ -178,10 +184,10 @@ def check_user_in_redis(user_id):
     result_in_redis = redis_db.hgetall(user_id)
 
     if len(result_in_redis) == 0:
-        logger.info(f"user wasn't found")
+        logger.info(f"user wasn't found in redis")
         return False
     else:
-        logger.info(f"user was found")
+        logger.info(f"user was found in redis")
         return True
 
 
@@ -192,23 +198,18 @@ def create_user_in_redis(user_id, language,first_name,last_name):
     """
     logger.info(f'Function {create_user_in_redis.__name__} called with args: '
                 f'user_id{user_id}, language {language}, first name {first_name}, last name {last_name}')
+
+    if language not in language_dict.keys():
+        language= 'en'
     if not check_user_in_db(user_id=user_id):
-        create_user_in_db(user_id=user_id, language=language)
+        create_user_in_db(user_id=user_id, language=language_dict[language])
     user_id, language, currency, status = get_user_from_bd(user_id=user_id)
     redis_db.hset(user_id, mapping={'language': language})
     redis_db.hset(user_id, mapping={'currency': currency})
     redis_db.hset(user_id, mapping={'status': status})
     redis_db.hset(user_id, mapping={'first_name': first_name})
     redis_db.hset(user_id, mapping={'last_name': last_name})
-    # всё остальное можно и убрать
-    # redis_db.hset(user_id, mapping={'command': ' '})
-    # redis_db.hset(user_id, mapping={'order': ' '})
-    # redis_db.hset(user_id, mapping={'city': ' '})
-    # redis_db.hset(user_id, mapping={'hotel_count': ' '})
-    # redis_db.hset(user_id, mapping={'photo_count': ' '})
-    # redis_db.hset(user_id, mapping={'date1': ' '})
-    # redis_db.hset(user_id, mapping={'date2': ' '})
-    logger.info(f'{user_id} created ')
+    logger.info(f'user with id {user_id} created ')
 
 
 def set_settings(user_id, key, value):
@@ -245,7 +246,6 @@ def set_settings(user_id, key, value):
 def get_settings(user_id, key=False):
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}')
-
     if key in redis_db.hgetall(user_id).keys():
         logger.info(f'Function {get_settings.__name__} completed successfully')
         return redis_db.hget(user_id, key)
@@ -297,4 +297,4 @@ def kill_user(user_id):
     logger.info(f'Function {kill_user.__name__} called with arg {user_id}')
     if check_user_in_redis(user_id):
         redis_db.delete(user_id)
-        logger.info(f'{user_id} was killed')
+        logger.info(f'hitman report: user with id {user_id} was killed')

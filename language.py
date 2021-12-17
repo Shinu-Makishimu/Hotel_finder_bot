@@ -2,188 +2,188 @@ interface = {
     'errors':
         {
             'city': {
-                'ru': 'Некорректный ввод. В названии должны быть буквы английского или русского алфавита и '
+                'ru_RU': 'Некорректный ввод. В названии должны быть буквы английского или русского алфавита и '
                       'символ "-".',
-                'en': 'Incorrect entry. The name must contain letters of the English or Russian alphabet '
+                'en_US': 'Incorrect entry. The name must contain letters of the English or Russian alphabet '
                       'and the symbol "-" ',
             },
             'price': {
-                'ru': 'Некорректный ввод. Нужно ввести два целых числа, разделенных пробелом.',
-                'en': 'You must enter two integers separated by a space. '
+                'ru_RU': 'Некорректный ввод. Нужно ввести два целых числа, разделенных пробелом.',
+                'en_US': 'You must enter two integers separated by a space. '
             },
             'int': {
-                'ru': 'Некорректный ввод. Нужно ввести целое число.',
-                'en': 'Incorrect entry. You must enter an integer. '
+                'ru_RU': 'Некорректный ввод. Нужно ввести целое число.',
+                'en_US': 'Incorrect entry. You must enter an integer. '
             },
             'count': {
-                'ru': 'Некорректный ввод. Число должно быть целым и не больше 20.',
-                'en': 'Incorrect entry. The number must be integer and no more than 20.'
+                'ru_RU': 'Некорректный ввод. Число должно быть целым и не больше 20.',
+                'en_US': 'Incorrect entry. The number must be integer and no more than 20.'
             },
             'location': {
-                'ru': '- по запросу ничего не найдено. Повторите еще раз.',
-                'en': 'not found. Try again.'
+                'ru_RU': '- по запросу ничего не найдено. Повторите еще раз.',
+                'en_US': 'not found. Try again.'
             },
             'hotels': {
-                'ru': 'Отели не найдены. Измените параметры поиска.',
-                'en': 'Hotels not found. Change your search parameters.'
+                'ru_RU': 'Отели не найдены. Измените параметры поиска.',
+                'en_US': 'Hotels not found. Change your search parameters.'
             },
             'input': {
-                'ru': 'Неверная команда. Отправь /help что бы получить информацию о доступных командах.',
-                'en': 'Invalid command. Send / help to get information about the available commands. '
+                'ru_RU': 'Неверная команда. Отправь /help что бы получить информацию о доступных командах.',
+                'en_US': 'Invalid command. Send / help to get information about the available commands. '
             },
             'bad_request': {
-                'ru': 'Сервер не отвечает, приходите позже.',
-                'en': 'Server not responding, come back later '
+                'ru_RU': 'Сервер не отвечает, приходите позже.',
+                'en_US': 'Server not responding, come back later '
             },
             'no_information': {
-                'ru': 'Нет данных',
-                'en': 'No information'
+                'ru_RU': 'Нет данных',
+                'en_US': 'No information'
             },
             'date': {
-                'ru': 'Дата въезда больше даты выезда',
-                'en': 'Check-in date is greater than check-out date'
+                'ru_RU': 'Дата въезда больше даты выезда',
+                'en_US': 'Check-in date is greater than check-out date'
             }
         },
     'questions':
         {
             'city': {
-                'ru': 'В каком городе искать отели?',
-                'en': 'In which city to look for hotels?'
+                'ru_RU': 'В каком городе искать отели?',
+                'en_US': 'In which city to look for hotels?'
             },
             'price': {
-                'ru': 'Введите минимальную и максимальную цену через пробел',
-                'en': 'Enter the minimum and maximum price separated by a space.'
+                'ru_RU': 'Введите минимальную и максимальную цену через пробел',
+                'en_US': 'Enter the minimum and maximum price separated by a space.'
             },
             'radius': {
-                'ru': 'Введите радиус поиска от центра города в км',
-                'en': 'Enter the search radius from the city center in miles'
+                'ru_RU': 'Введите радиус поиска от центра города в км',
+                'en_US': 'Enter the search radius from the city center in miles'
             },
             'count': {
-                'ru': 'Сколько отелей вывести? Максимум - ',
-                'en': 'How many hotels to show? Maximum - '
+                'ru_RU': 'Сколько отелей вывести? Максимум - ',
+                'en_US': 'How many hotels to show? Maximum - '
             },
             'max_distance': {
-                'ru': 'Максимальное расстояние до центра города',
-                'en': 'Maximum distance to city center'
+                'ru_RU': 'Максимальное расстояние до центра города',
+                'en_US': 'Maximum distance to city center'
             },
             'loc_choose': {
-                'ru': 'Выберите город из списка',
-                'en': 'Select the city from list'
+                'ru_RU': 'Выберите город из списка',
+                'en_US': 'Select the city from list'
             },
             'photo': {
-                'ru': 'Сколько фотографий вывести? Максимум - 5',
-                'en': 'How many hotels to show? Maximum - 5'
+                'ru_RU': 'Сколько фотографий вывести? Максимум - 5',
+                'en_US': 'How many hotels to show? Maximum - 5'
             },
             'need_photo': {
-                'ru': 'Нужны фотографии отеля?',
-                'en': 'Do you nedd photos?'
+                'ru_RU': 'Нужны фотографии отеля?',
+                'en_US': 'Do you nedd photos?'
             },
             'date1': {
-                'ru': 'Выберите дату заезда',
-                'en': "Select check-in date"
+                'ru_RU': 'Выберите дату заезда',
+                'en_US': "Select check-in date"
             },
             'date2': {
-                'ru': 'Выберите дату выезда',
-                'en': "Select check-out date"
+                'ru_RU': 'Выберите дату выезда',
+                'en_US': "Select check-out date"
             }
         },
     'buttons':
         {
             'main_menu': {
-                'ru': 'Главное меню',
-                'en': 'Main menu'
+                'ru_RU': 'Главное меню',
+                'en_US': 'Main menu'
             },
             'cancel': {
-                'ru': 'Отмена',
-                'en': 'Cancel'
+                'ru_RU': 'Отмена',
+                'en_US': 'Cancel'
             },
             'back': {
-                'ru': 'Назад',
-                'en': 'Back'
+                'ru_RU': 'Назад',
+                'en_US': 'Back'
             },
             'settings': {
-                'ru': 'Настройки',
-                'en': 'Settings'
+                'ru_RU': 'Настройки',
+                'en_US': 'Settings'
             },
             'history': {
-                'ru': 'История',
-                'en': 'History'
+                'ru_RU': 'История',
+                'en_US': 'History'
             },
             'currency': {
-                'ru': 'Валюта',
-                'en': 'Currency'
+                'ru_RU': 'Валюта',
+                'en_US': 'Currency'
             },
             'language': {
-                'ru': 'Язык',
-                'en': 'Language'
+                'ru_RU': 'Язык',
+                'en_US': 'Language'
             }
 
         },
     'responses':
         {
             'greeting_1':{
-                'ru': 'Привет',
-                'en': 'Hi'
+                'ru_RU': 'Привет',
+                'en_US': 'Hi'
             },
             'greeting_new': {
-                'ru': ' Я бот, помогающий найти ночлег в отеле.',
-                'en': "I'm bot"
+                'ru_RU': ' Я бот, помогающий найти ночлег в отеле.',
+                'en_US': "I'm bot"
             },
             'greeting_old': {
-                'ru': 'Добро пожаловать, снова',
-                'en': "Welcome back, again"
+                'ru_RU': 'Добро пожаловать, снова',
+                'en_US': "Welcome back, again"
             },
             'your_choice': {
-                'ru': 'Вы выбрали',
-                'en': 'Your choice is'
+                'ru_RU': 'Вы выбрали',
+                'en_US': 'Your choice is'
             },
             'your_settings': {
-                'ru': 'Ваши текущие настройки',
-                'en': 'Your current settings is'
+                'ru_RU': 'Ваши текущие настройки',
+                'en_US': 'Your current settings is'
             },
             'ask_to_select': {
-                'ru': 'Выберите один из вариантов',
-                'en': 'Select one of next options'
+                'ru_RU': 'Выберите один из вариантов',
+                'en_US': 'Select one of next options'
             },
             'current_language': {
-                'ru': 'Язык',
-                'en': 'Language'
+                'ru_RU': 'Язык',
+                'en_US': 'Language'
             },
             'current_currency': {
-                'ru': 'Валюта',
-                'en': 'Currency'
+                'ru_RU': 'Валюта',
+                'en_US': 'Currency'
             },
             'language': {
-                'ru': 'Русский',
-                'en': 'English'
+                'ru_RU': 'Русский',
+                'en_US': 'English'
             },
             'canceled': {
-                'ru': 'Отменено',
-                'en': 'Canceled'
+                'ru_RU': 'Отменено',
+                'en_US': 'Canceled'
             },
             'hotels_found': {
-                'ru': 'Найдено отелей',
-                'en': 'Hotels found'
+                'ru_RU': 'Найдено отелей',
+                'en_US': 'Hotels found'
             },
             'loc_selected': {
-                'ru': 'Выбрана локация',
-                'en': 'Location selected'
+                'ru_RU': 'Выбрана локация',
+                'en_US': 'Location selected'
             },
             'parameters': {
-                'ru': 'Параметры поиска',
-                'en': 'Search parameters'
+                'ru_RU': 'Параметры поиска',
+                'en_US': 'Search parameters'
             },
             'saved': {
-                'ru': 'Изменение выполнено!',
-                'en': 'Setting saved!'
+                'ru_RU': 'Изменение выполнено!',
+                'en_US': 'Setting saved!'
             },
             'default_sett':{
-                'ru': 'Применяются настройки по умолчанию. Для изменения - посетите настройки',
-                'en': 'The default settings are applied. To change - visit settings'
+                'ru_RU': 'Применяются настройки по умолчанию. Для изменения - посетите настройки',
+                'en_US': 'The default settings are applied. To change - visit settings'
             },
             'ok': {
-                'ru': 'Принято',
-                'en': 'Ok'
+                'ru_RU': 'Принято',
+                'en_US': 'Ok'
             }
 
 
@@ -191,33 +191,33 @@ interface = {
     'elements':
         {
             'hotel': {
-                'ru': 'Отель',
-                'en': 'Hotel'
+                'ru_RU': 'Отель',
+                'en_US': 'Hotel'
             },
             'address': {
-                'ru': 'Адрес',
-                'en': 'Address'
+                'ru_RU': 'Адрес',
+                'en_US': 'Address'
             },
 
             'distance': {
-                'ru': 'Расстояние до центра города',
-                'en': 'Distance to city center',
+                'ru_RU': 'Расстояние до центра города',
+                'en_US': 'Distance to city center',
             },
             'rating': {
-                'ru': 'Класс отеля',
-                'en': 'Rating'
+                'ru_RU': 'Класс отеля',
+                'en_US': 'Rating'
             },
             'city': {
-                'ru': 'Город',
-                'en': 'City'
+                'ru_RU': 'Город',
+                'en_US': 'City'
             },
             'price': {
-                'ru': 'Стоимость',
-                'en': 'Price'
+                'ru_RU': 'Стоимость',
+                'en_US': 'Price'
             },
             'settings_menu':{
-                'ru': 'Меню настроек',
-                'en': 'Settings menu'
+                'ru_RU': 'Меню настроек',
+                'en_US': 'Settings menu'
             }
         }
 }

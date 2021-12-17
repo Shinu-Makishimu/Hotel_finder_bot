@@ -30,7 +30,8 @@ logger_config = {
             "format": "{time} | {level} | {message}",
             "encoding": "utf-8",
             "level": "DEBUG",
-            "rotation": "5 MB"
+            "rotation": "5 MB",
+            "mode": "w"
         },
     ],
 }
