@@ -57,6 +57,11 @@ def delete_tags(html_text):
 
 
 
+
+
+
+
+
 ##################################################################################
 # import json
 # url = "https://hotels4.p.rapidapi.com/locations/v2/search"
