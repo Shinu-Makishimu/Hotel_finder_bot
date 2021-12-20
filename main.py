@@ -152,8 +152,7 @@ def main_menu(user_id, command, chat_id):
         db.set_settings(user_id=user_id, key='command', value=command)
         bot.register_next_step_handler(bot.send_message(chat_id,
                                                         interface['questions']['city'][lang]),
-                                       choose_city
-                                       )
+                                       choose_city)
 
 
 def choose_city(message):
@@ -178,8 +177,7 @@ def choose_city(message):
     else:
         bot.send_message(message.chat.id, interface['errors']['city'][language])
         bot.register_next_step_handler(bot.send_message(message.chat.id,
-                                                        interface['questions']['city'][language]),
-                                       choose_city)
+                                                        interface['questions']['city'][language]),choose_city)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('code'))
@@ -328,19 +326,20 @@ def min_max_price(message):
 
 
 def end_conversation(user_id, chat_id):
+
     hotels = get_hotels(user_id=user_id)
     logger.info(f'Function {get_hotels.__name__} returned: {hotels}')
     db.set_history(user_id, hotels)
     if not hotels or len(hotels) < 1:
-        bot.send_message(chat_id, interface['errors']['hotels'][db.get_settings
-                                                                                (user_id=user_id, key='language')])
+        bot.send_message(chat_id, interface['errors']['hotels'][db.get_settings(user_id=user_id, key='language')])
     elif 'bad_request' in hotels:
-        bot.send_message(chat_id, interface['errors']['bad_request'][db.get_settings
-                                                                                (user_id=user_id, key='language')])
+        bot.send_message(chat_id, interface['errors']['bad_request'][db.get_settings(user_id=user_id, key='language')])
     else:
         bot.send_message(chat_id, interface['responses']['hotels_found'][db.get_settings(user_id=user_id, key='language')] + str(len(hotels)))
         for hotel in hotels:
             bot.send_message(chat_id, hotel)
+            # bot.send_photo(id, photo, caption='Вставьте текст')
+
 
 
 bot.infinity_polling()
