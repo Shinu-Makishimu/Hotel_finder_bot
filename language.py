@@ -63,7 +63,7 @@ interface = {
                 'en_US': 'Enter the search radius from the city center in miles'
             },
             'count': {
-                'ru_RU': 'Сколько отелей вывести? Максимум - ',
+                'ru_RU': 'Сколько отелей вывести? Максимум - 20',
                 'en_US': 'How many hotels to show? Maximum - '
             },
             'max_distance': {

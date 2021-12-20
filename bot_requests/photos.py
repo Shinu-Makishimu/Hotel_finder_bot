@@ -4,54 +4,54 @@ from database import get_settings
 from loguru import logger
 from settings import API_TOKEN
 
+# url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
+#
+# querystring = {"id":"1178275040"}
+#
+# headers = {
+#     'x-rapidapi-host': "hotels4.p.rapidapi.com",
+#     'x-rapidapi-key': "SIGN-UP-FOR-KEY"
+#     }
+#
+# response = requests.request("GET", url, headers=headers, params=querystring)
+#
+# print(response.text)
 
-def make_locations_list(message) -> dict:
-    logger.info(f'function {make_locations_list.__name__} was called with message')
-    data = request_locations(message)
+
+
+
+
+def make_photo_list(hotel_id, counter) -> dict:
+    logger.info(f'function {make_photo_list.__name__} was called')
+    data = request_photos(hotel_id, counter)
     if not data:
         return {'bad_request': 'bad_request'}
-    locations = dict()
-    if len(data.get('suggestions')[0].get('entities')) > 0:
-        for item in data.get('suggestions')[0].get('entities'):
-            location_name = re.sub('<([^<>]*)>', '',item['caption'])
-            locations[location_name] = item['destinationId']
-        return locations
+    print(data)
 
 
 
-def request_locations(message):
 
-    url = "https://hotels4.p.rapidapi.com/locations/v2/search"
-    language = get_settings(user_id=message.from_user.id, key='language')
-    logger.info(f'function {request_locations.__name__} was called with message and use args: '
-                f'lang: {language}\t text: {message.text}')
+def request_photos(hotel_id, counter):
 
-    querystring = {
-        "query": message.text.strip(),
-        "locale": language
-    }
+    url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
+    #
+    # language = get_settings(user_id=user_id, key='language')
+    logger.info(f'function {request_photos.__name__} was called with message and use args: '
+                f'lang: {hotel_id}\t text: {counter}')
+
+    querystring = {"id":"1178275040"}
+
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
         'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
         }
-    #
 
-    # headers = {
-    #     'x-rapidapi-host': "hotels4.p.rapidapi.com",
-    #     'x-rapidapi-key': API_TOKEN
-    #     }
+    requests.request("GET", url, headers=headers, params=querystring)
 
     response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
     data = response.json()
-    # подумать что делать  если нету ничего в ответе
+
     return data
-
-
-def delete_tags(html_text):
-    logger.info(f'function {delete_tags.__name__} was called')
-    text = re.sub('<([^<>]*)>', '', html_text)
-    return text
-
 
 
 

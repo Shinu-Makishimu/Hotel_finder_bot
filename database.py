@@ -136,23 +136,23 @@ def create_history_record(user_id, hist_dict):
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
 
-    with sqlite3.connect(NAME_DATABASE) as db:
-        cursor = db.cursor()
-        request = """INSERT INTO requests VALUES (NULL,?,?,?,?,?,?,?,?) """
-        cursor.execute(
-            request,
-            (
-                user_id,
-                hist_dict['command'],
-                hist_dict['order'],
-                hist_dict['city'],
-                hist_dict['hotel_count'],
-                hist_dict['photo_count'],
-                hist_dict['date'],
-                hist_dict['hotels']
-            )
-        )
-        db.commit()
+    # with sqlite3.connect(NAME_DATABASE) as db:
+    #     cursor = db.cursor()
+    #     request = """INSERT INTO requests VALUES (NULL,?,?,?,?,?,?,?,?) """
+    #     cursor.execute(
+    #         request,
+    #         (
+    #             user_id,
+    #             hist_dict['command'],
+    #             hist_dict['order'],
+    #             hist_dict['city'],
+    #             hist_dict['hotel_count'],
+    #             hist_dict['photo_count'],
+    #             hist_dict['date'],
+    #             hist_dict['hotels']
+    #         )
+    #     )
+    #     db.commit()
 
 
 def get_history_from_db(user_id):
@@ -223,9 +223,12 @@ def set_settings(user_id, key, value):
 def get_settings(user_id, key=False):
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}')
-    if key not in redis_db.hgetall(user_id).keys():
+    if key == 'all':
+        return redis_db.hgetall(user_id)
+    elif key not in redis_db.hgetall(user_id).keys():
         logger.info(f'Key {key} not found in redis! return {redis_db.hget(user_id, key)}')
-    return redis_db.hget(user_id, key)
+    else:
+        return redis_db.hget(user_id, key)
 
 
 
@@ -254,8 +257,7 @@ def set_history(user_id, result):
     """
     logger.info(f'Function {set_history.__name__} called with argument: '
                 f'user_id {user_id}\tresult:\n{result}')
-    y, m, d = [int(i) for i in str(datetime.datetime.now().date()).split('-')]
-    date = get_timestamp(y, m, d)
+    date = get_timestamp(datetime.datetime.now().date())
     result_from_redis = redis_db.hgetall(user_id)
     # подготовка данных к запихиванию в sql
     result_from_redis.update({'date': date})
@@ -265,8 +267,6 @@ def set_history(user_id, result):
     del result_from_redis['status']
 
     create_history_record(user_id=user_id, hist_dict=result_from_redis)
-
-    redis_db.delete(user_id)
 
 
 def kill_user(user_id):
