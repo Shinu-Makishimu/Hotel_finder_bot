@@ -66,6 +66,7 @@ def buttons_catcher_main(call: types.CallbackQuery) -> None:
     """
     logger.info(f'Function {buttons_catcher_main.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
+    bot.answer_callback_query(call.id)
     main_menu(user_id=call.from_user.id, command=call.data.split('_')[1], chat_id=call.message.chat.id)
 
 
@@ -223,8 +224,6 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
                 f'user_id {call.from_user.id} and data: {call.data}')
     bot.answer_callback_query(call.id)
     db.set_settings(user_id=call.from_user.id, key='city', value=call.data[4:])
-    bot.send_message(call.message.chat.id,
-                     interface['responses']['saved'][db.get_settings(call.from_user.id, key='language')])
     msg = bot.send_message(call.message.chat.id,
                            interface['questions']['count'][db.get_settings(call.from_user.id, key='language')])
     bot.register_next_step_handler(msg, hotel_counter)
@@ -262,7 +261,7 @@ def photo_counter_answ(message: types.Message) -> None:
         db.set_settings(user_id=message.from_user.id, key='photo_count', value=message.text)
         choose_date(message)
     else:
-        msg = bot.send_message(message.message.chat.id,
+        msg = bot.send_message(message.chat.id,
                                interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')])
         bot.register_next_step_handler(msg, photo_counter_answ)
 
@@ -348,19 +347,6 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
             choose_date(call)
 
 
-# def hotel_result(call: types.CallbackQuery) -> None:
-#     command = db.get_settings(user_id=call.from_user.id, key='command')
-#     logger.info(f'Function {hotel_result.__name__} called and use argument command : {command}')
-#
-#     if command == 'bestdeal':
-#         msg = bot.send_message(call.message.chat.id,
-#                                interface['questions']['radius'][db.get_settings
-#                                (user_id=call.from_user.id, key='language')])
-#         bot.register_next_step_handler(msg, distanse_from_centre)
-#     elif command in ['lowprice', 'highprice']:
-#         end_conversation(user_id=str(call.from_user.id), chat_id=call.message.chat.id)
-
-
 def distanse_from_centre(message: types.Message) -> None:
     logger.info(f'Function {distanse_from_centre.__name__} called, user input is in condition. use arg: '
                 f'distance =  {message.text}')
@@ -415,8 +401,12 @@ def end_conversation(user_id: str, chat_id: int) -> None:
             if len(list_of_urls) <1:
                 bot.send_message(chat_id, message)
             else:
-
-                bot.send_photo(chat_id, photo=list_of_urls, caption=message)
+                # media_group= [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
+                media_group = list()
+                for i_elem in list_of_urls:
+                    media_group.append(types.InputMediaPhoto(media=i_elem))
+                bot.send_media_group(chat_id, media=media_group)
+                bot.send_message(chat_id, message)
 
 
 bot.infinity_polling()

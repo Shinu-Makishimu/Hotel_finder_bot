@@ -245,11 +245,14 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
 def hotel_price(hotel) -> int:
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
     price = 0
-    if hotel.get('ratePlan').get('price').get('exactCurrent'):
-        price = hotel.get('ratePlan').get('price').get('exactCurrent')
-    else:
-        price = hotel.get('ratePlan').get('price').get('current')
-        price = int(re.sub(r'[^0-9]', '', price))
+    try:
+        if hotel.get('ratePlan').get('price').get('exactCurrent'):
+            price = hotel.get('ratePlan').get('price').get('exactCurrent')
+        else:
+            price = hotel.get('ratePlan').get('price').get('current')
+            price = int(re.sub(r'[^0-9]', '', price))
+    except Exception as error:
+        logger.warning(f'price crushed with {error}')
     return price
 
 

@@ -1,5 +1,6 @@
 import datetime
 import sqlite3
+import json
 
 from loguru import logger
 from typing import Any
@@ -132,6 +133,9 @@ def set_settings_in_db(user_id: str, key: str, value: str) -> None:
 def create_history_record(user_id: str, hist_dict: dict) -> None:
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
+    name= hist_dict['first_name']+'_history.txt'
+    with open(name, 'w') as file:
+        json.dump(hist_dict, file, indent=4)
 
     # with sqlite3.connect(NAME_DATABASE) as db:
     #     cursor = db.cursor()
