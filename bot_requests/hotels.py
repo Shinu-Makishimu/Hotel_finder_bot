@@ -132,8 +132,8 @@ def request_hotels(p, page=1):
         data = response.json()
         if data.get('message'):
             raise requests.exceptions.RequestException
-        with open('hotels_data.txt', 'w') as file:
-            json.dump(data, file, indent=4)
+        # with open('hotels_data.txt', 'w') as file: # just for testing
+        #     json.dump(data, file, indent=4)
         logger.info(f'Hotels api(properties/list) response received: {data}')
         return data
 

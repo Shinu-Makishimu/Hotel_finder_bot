@@ -273,13 +273,12 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
     :param message:
     :return:
     """
-    logger.info(f'\n\n{message}\n\n')
     date_1 = db.get_settings(user_id=message.from_user.id, key='date1')
     date_2 = db.get_settings(user_id=message.from_user.id, key='date2')
     language = db.get_settings(user_id=message.from_user.id, key='language')
     logger.info(f'Function {choose_date.__name__} called with args:'
                 f' date_1 = {date_1} date_2 = {date_2} language {language}')
-    if int(date_1) == 0 or date_1 is None:
+    if date_1 == 0 or date_1 is None:
         reply = interface['questions']['date1'][language]
         calendar, step = DetailedTelegramCalendar(calendar_id=1, locale=language[:2]).build()
         bot.send_message(message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
@@ -416,6 +415,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
             if len(list_of_urls) <1:
                 bot.send_message(chat_id, message)
             else:
+
                 bot.send_photo(chat_id, photo=list_of_urls, caption=message)
 
 
