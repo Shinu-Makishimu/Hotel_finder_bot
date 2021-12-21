@@ -1,3 +1,5 @@
+from typing import Type, List
+
 import requests
 import re
 from database import get_settings
@@ -45,11 +47,7 @@ order = {
 
 
 def get_hotels(user_id):
-    """
 
-    :param user_id:
-    :return:
-    """
     logger.info(f'function {get_hotels.__name__} was called with user_id {user_id}')
     params = get_settings(user_id=user_id, key='all')
 
@@ -170,19 +168,13 @@ def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[
     return hotels
 
 
-def generate_hotels_descriptions(hotels: dict, user_id: str) -> list[str]:
-    """
-    generate hotels description
-    :param msg: Message
-    :param hotels: Hotels information
-    :return: list with string like hotel descriptions
-
-    """
+def generate_hotels_descriptions(hotels: dict, user_id: str) -> Type[dict]:
     logger.info(f'Function {generate_hotels_descriptions.__name__} called with argument {hotels}')
-    hotels_info = []
-    photo_links = []
+    hotels_info = dict
+    # hotels_info = []
+    photo_number = get_settings(user_id=user_id, key='photo_count')
     for hotel in hotels:
-        foto = make_photo_list(hotel_id=hotel.get('id'), counter=get_settings(user_id=user_id, key='photo_count'))
+        photo = make_photo_list(hotel_id=hotel.get('id'), counter=int(photo_number))
         message = (
             f"{interface['elements']['hotel'][get_settings(user_id=user_id, key='language')]}: "
             f"{hotel.get('name')}\n"
@@ -199,37 +191,31 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> list[str]:
             f"{interface['elements']['address'][get_settings(user_id=user_id, key='language')]}: "
             f"{hotel.get('address')}\n"
         )
-        photo_links.append({hotel.get('id'): foto})
-        hotels_info.append(message)
+
+        hotels_info.update(
+            {
+                hotel.get('id'):
+                    {
+                        "message": message,
+                        "photo": photo
+                    }
+            })
+
     return hotels_info
 
 
 def hotel_price(hotel) -> int:
-    """
-    return hotel price
-    :param hotel: dict - hotel information
-    :return: integer or float like number
-    """
-
     price = 0
-    try:
-        if hotel.get('ratePlan').get('price').get('exactCurrent'):
-            price = hotel.get('ratePlan').get('price').get('exactCurrent')
-        else:
-            price = hotel.get('ratePlan').get('price').get('current')
-            price = int(re.sub(r'[^0-9]', '', price))
-    except Exception as e:
-        logger.warning(f'Hotel price getting error {e}')
+
+    if hotel.get('ratePlan').get('price').get('exactCurrent'):
+        price = hotel.get('ratePlan').get('price').get('exactCurrent')
+    else:
+        price = hotel.get('ratePlan').get('price').get('current')
+        price = int(re.sub(r'[^0-9]', '', price))
     return price
 
 
 def hotel_address(hotel: dict, user_id: str) -> str:
-    """
-    returns hotel address
-    :param msg: Message
-    :param hotel: dict - hotel information
-    :return: hotel address
-    """
     message = interface['errors']['no_information'][get_settings(user_id=user_id, key='language')]
     if hotel.get('address'):
         message = hotel.get('address').get('streetAddress', message)
@@ -237,12 +223,6 @@ def hotel_address(hotel: dict, user_id: str) -> str:
 
 
 def hotel_rating(rating: float, user_id: str) -> str:
-    """
-    returns rating hotel in asterisks view
-    :param rating: hotel rating
-    :param msg: Message
-    :return: string like asterisks view hotel rating
-    """
     if not rating:
         return interface['errors']['no_information'][get_settings(user_id=user_id, key='language')]
     return '⭐' * int(rating)

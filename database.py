@@ -28,7 +28,7 @@ language_dict= {
 #################################### секция sqlite3 ####################################
 
 
-def create_bd_if_not_exist():
+def create_bd_if_not_exist() -> None:
     logger.info(f'Function {create_bd_if_not_exist.__name__} called')
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -58,7 +58,7 @@ def create_bd_if_not_exist():
         db.commit()
 
 
-def create_user_in_db(user_id, language):
+def create_user_in_db(user_id: int, language:str) -> None:
     logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
     currency = 'RUB'
     status = 'new'
@@ -80,13 +80,7 @@ def create_user_in_db(user_id, language):
         db.commit()
 
 
-def check_user_in_db(user_id):
-    """
-    проверка наличия присутствия пользователя в бд. )
-    :param message:
-    :return:
-    """
-
+def check_user_in_db(user_id: int) -> bool:
     logger.info(f'Function {check_user_in_db.__name__} called and use args: user_id\t{user_id}')
 
     with sqlite3.connect(NAME_DATABASE, check_same_thread=False) as db:
@@ -102,7 +96,7 @@ def check_user_in_db(user_id):
         return True
 
 
-def get_user_from_bd(user_id):
+def get_user_from_bd(user_id: int)->list[str]:
     logger.info(f'Function {get_user_from_bd.__name__} called use args: user_id\t{user_id}')
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -113,7 +107,7 @@ def get_user_from_bd(user_id):
         return response[0]
 
 
-def set_settings_in_db(user_id, key, value):
+def set_settings_in_db(user_id: int, key:str, value:str) -> None:
     logger.info(f'Function {set_settings_in_db.__name__} called with arguments: '
                 f'\nuser_id {user_id}\tkey {key}\tvalue {value} ')
 
@@ -132,7 +126,7 @@ def set_settings_in_db(user_id, key, value):
         db.commit()
 
 
-def create_history_record(user_id, hist_dict):
+def create_history_record(user_id: int, hist_dict: dict)-> None:
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
 
@@ -155,7 +149,7 @@ def create_history_record(user_id, hist_dict):
     #     db.commit()
 
 
-def get_history_from_db(user_id):
+def get_history_from_db(user_id: int) -> list[str]:
     logger.info(f'Function {get_history_from_db.__name__} called with argument: user_ id {user_id}')
 
     with sqlite3.connect(NAME_DATABASE) as db:
@@ -170,14 +164,8 @@ def get_history_from_db(user_id):
 #################################### секция redis ####################################
 
 
-def check_user_in_redis(user_id):
-    """
-    проверка наличия присутствия пользователя.
-    сначала проверяем в редисе, если в редисе нет, проверяем в sqlite. если в sqlite нет, то создаём пользователя
-    и загружаем его в редис
-    :param message:
-    :return:
-    """
+def check_user_in_redis(user_id: int) -> bool:
+
 
     logger.info(f'Function {check_user_in_redis.__name__} called use args: user_id\t{user_id}')
 
@@ -191,11 +179,8 @@ def check_user_in_redis(user_id):
         return True
 
 
-def create_user_in_redis(user_id, language,first_name,last_name):
-    """
-    :param msg:
-    :return:
-    """
+def create_user_in_redis(user_id: int, language: str,first_name:str,last_name:str) -> None:
+
     logger.info(f'Function {create_user_in_redis.__name__} called with args: '
                 f'user_id{user_id}, language {language}, first name {first_name}, last name {last_name}')
 
@@ -212,7 +197,7 @@ def create_user_in_redis(user_id, language,first_name,last_name):
     logger.info(f'user with id {user_id} created ')
 
 
-def set_settings(user_id, key, value):
+def set_settings(user_id: int, key:str, value:str) -> None:
     logger.info(f'Function {set_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}\tvaluse {value}')
     if key in ['language', 'currency','status']:
@@ -220,7 +205,7 @@ def set_settings(user_id, key, value):
     redis_db.hset(user_id, mapping={key: value})
 
 
-def get_settings(user_id, key=False):
+def get_settings(user_id: int or str, key: object = False) -> str:
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}')
     if key == 'all':
@@ -232,14 +217,14 @@ def get_settings(user_id, key=False):
 
 
 
-def set_navigate(user_id, value):
+def set_navigate(user_id: int, value:str) -> None:
     logger.info(f'Function {set_navigate.__name__} called with argument: '
                 f'user_id {user_id}\tvalue{value}')
 
     redis_db.hset(user_id, mapping={'status': value})
 
 
-def get_navigate(user_id):
+def get_navigate(user_id:int) -> dict:
     logger.info(f'Function {get_navigate.__name__} called with argument: '
                 f'user_id {user_id}')
     result = redis_db.hget(user_id, 'status')
@@ -248,7 +233,7 @@ def get_navigate(user_id):
     # return re.search(r'\w+', str(result)[2:])[0]
 
 
-def set_history(user_id, result):
+def set_history(user_id:int, result:dict) -> None:
     """
     {'command': 'low price', 'city': 'Выборг', 'hotel_count': '12', 'photo_count': '3', 'order': 'PRICE', 'date': 1639429200.0, 'hotels': 'ссылка1*ссылка2*ссылка*3'}
     :param user_id:
@@ -269,7 +254,7 @@ def set_history(user_id, result):
     create_history_record(user_id=user_id, hist_dict=result_from_redis)
 
 
-def kill_user(user_id):
+def kill_user(user_id: int or str) -> None:
     logger.info(f'Function {kill_user.__name__} called with arg {user_id}')
     if check_user_in_redis(user_id):
         redis_db.delete(user_id)

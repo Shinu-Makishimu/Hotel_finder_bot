@@ -13,7 +13,7 @@ def make_locations_list(message) -> dict:
     locations = dict()
     if len(data.get('suggestions')[0].get('entities')) > 0:
         for item in data.get('suggestions')[0].get('entities'):
-            location_name = re.sub('<([^<>]*)>', '',item['caption'])
+            location_name = re.sub('<([^<>]*)>', '', item['caption'])
             locations[location_name] = item['destinationId']
         return locations
 
@@ -35,7 +35,7 @@ def request_locations(message):
         'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
         }
     #
-
+    # при подстановке этого хедера апи токен читается не правильно и апи возвращает бэд реквест
     # headers = {
     #     'x-rapidapi-host': "hotels4.p.rapidapi.com",
     #     'x-rapidapi-key': API_TOKEN

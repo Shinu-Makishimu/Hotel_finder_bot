@@ -35,3 +35,4 @@ logger_config = {
         },
     ],
 }
+PHOTO_SIZE = "b"
