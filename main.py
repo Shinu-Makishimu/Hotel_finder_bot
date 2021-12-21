@@ -37,7 +37,7 @@ if not path.isfile(NAME_DATABASE):
 
 
 @bot.message_handler(commands=['start', 'lowprice', 'highprice', 'bestdeal', 'settings', 'help'])
-def commands_catcher(message) -> None:
+def commands_catcher(message):
     """
     отлов команд
     :param message:
@@ -58,14 +58,14 @@ def commands_catcher(message) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('main'))
-def buttons_catcher_main(call) -> None:
+def buttons_catcher_main(call):
     logger.info(f'Function {buttons_catcher_main.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
     main_menu(user_id=call.from_user.id, command=call.data.split('_')[1], chat_id=call.message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('set'))
-def buttons_catcher_settings(call) -> None:
+def buttons_catcher_settings(call):
     logger.info(f'Function {buttons_catcher_settings.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
     logger.info(f'Function settings menu called')
@@ -83,7 +83,7 @@ def buttons_catcher_settings(call) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('money'))
-def buttons_catcher_money(call) -> None:
+def buttons_catcher_money(call):
     logger.info(f'Function {buttons_catcher_money.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
     bot.answer_callback_query(call.id)
@@ -105,7 +105,7 @@ def buttons_catcher_money(call) -> None:
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('lang'))
-def buttons_catcher_language(call) -> None:
+def buttons_catcher_language(call):
     logger.info(f'Function {buttons_catcher_language.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
     bot.answer_callback_query(call.id)
@@ -120,7 +120,7 @@ def buttons_catcher_language(call) -> None:
     main_menu(user_id=call.from_user.id, command='settings', chat_id=call.message.chat.id)
 
 
-def main_menu(user_id, command, chat_id) -> None:
+def main_menu(user_id, command, chat_id):
     logger.info(f'Function {main_menu.__name__} called '
                 f'and use argument: user_id {user_id} key {command} chat_id {chat_id}')
     lang = db.get_settings(user_id, key='language')
@@ -144,15 +144,18 @@ def main_menu(user_id, command, chat_id) -> None:
         bot.send_message(chat_id, reply, reply_markup=settings_keyboard)
     elif command == 'history':
         # проверка на нюфага
-        bot.send_message(chat_id, 'В разработке')
+        # set_settings(msg=call, key='command', value='history')
+        # get_history()
+        pass
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
         db.set_settings(user_id=user_id, key='command', value=command)
         bot.register_next_step_handler(bot.send_message(chat_id,
-                                                        interface['questions']['city'][lang]),choose_city)
+                                                        interface['questions']['city'][lang]),
+                                       choose_city)
 
 
-def choose_city(message) -> None:
+def choose_city(message):
     logger.info(f'function {choose_city.__name__} was called')
     language = db.get_settings(user_id=message.from_user.id, key='language')
 
@@ -174,12 +177,11 @@ def choose_city(message) -> None:
     else:
         bot.send_message(message.chat.id, interface['errors']['city'][language])
         bot.register_next_step_handler(bot.send_message(message.chat.id,
-                                                        interface['questions']['city'][language]),
-                                       choose_city)
+                                                        interface['questions']['city'][language]),choose_city)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('code'))
-def city_buttons_catcher(call) -> None:
+def city_buttons_catcher(call):
     logger.info(f'Function {city_buttons_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
     bot.answer_callback_query(call.id)
@@ -191,7 +193,7 @@ def city_buttons_catcher(call) -> None:
     bot.register_next_step_handler(msg, hotel_counter)
 
 
-def hotel_counter(message) -> None:
+def hotel_counter(message):
     if ' ' not in message.text.strip() and message.text.strip().isdigit() and 0 < int(message.text.strip()) <= 20:
         logger.info(f'Function {hotel_counter.__name__} called, user input is in condition. use arg: '
                     f'hotel counter =  {message.text}')
@@ -207,7 +209,7 @@ def hotel_counter(message) -> None:
         bot.register_next_step_handler(msg, hotel_counter)
 
 
-def photo_counter_answ(message) -> None:
+def photo_counter_answ(message):
     logger.info(f'Function {photo_counter_answ.__name__} called, user input is in condition. use arg: '
                 f'{message.text}')
     if message.text.strip().isdigit() and 0 <= int(message.text.strip()) <= 5:
@@ -215,11 +217,12 @@ def photo_counter_answ(message) -> None:
         choose_date(message)
     else:
         msg = bot.send_message(message.message.chat.id,
-                               interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')])
+                               interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')] +
+                               '0 - 5')
         bot.register_next_step_handler(msg, photo_counter_answ)
 
 
-def choose_date(message) -> None:
+def choose_date(message):
     logger.info(f'\n\n{message}\n\n')
     date_1 = db.get_settings(user_id=message.from_user.id, key='date1')
     date_2 = db.get_settings(user_id=message.from_user.id, key='date2')
@@ -237,7 +240,7 @@ def choose_date(message) -> None:
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
-def callback_calendar_1(call) -> None:
+def callback_calendar_1(call):
     # {LSTEP[step]}
     logger.info(f'Function {callback_calendar_1.__name__} called ')
     result, key, step = DetailedTelegramCalendar(calendar_id=1).process(call.data)
@@ -255,7 +258,7 @@ def callback_calendar_1(call) -> None:
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
-def callback_calendar_2(call) -> None:
+def callback_calendar_2(call):
     logger.info(f'Function {callback_calendar_2.__name__} called')
     language = db.get_settings(user_id=call.from_user.id, key='language')
     result, key, step = DetailedTelegramCalendar(calendar_id=2).process(call.data)
@@ -278,7 +281,7 @@ def callback_calendar_2(call) -> None:
             choose_date(call)
 
 
-def hotel_result(call) -> None:
+def hotel_result(call):
     command = db.get_settings(user_id=call.from_user.id, key='command')
     logger.info(f'Function {hotel_result.__name__} called and use argument command : {command}')
 
@@ -291,7 +294,7 @@ def hotel_result(call) -> None:
         end_conversation(user_id=call.from_user.id, chat_id=call.message.chat.id)
 
 
-def distanse_from_centre(message) -> None:
+def distanse_from_centre(message):
     logger.info(f'Function {distanse_from_centre.__name__} called, user input is in condition. use arg: '
                 f'distance =  {message.text}')
     if message.text.strip().isdigit():
@@ -306,7 +309,7 @@ def distanse_from_centre(message) -> None:
         bot.register_next_step_handler(msg, distanse_from_centre)
 
 
-def min_max_price(message) -> None:
+def min_max_price(message):
     logger.info(f'Function {min_max_price.__name__} called, user input is in condition. use arg: '
                 f'distance =  {message.text} user_id {message.from_user.id}')
     if message.replace(' ', '').isdigit() and len(message.split()) == 2:
@@ -322,22 +325,21 @@ def min_max_price(message) -> None:
         bot.register_next_step_handler(msg, min_max_price)
 
 
-def end_conversation(user_id, chat_id) -> None:
+def end_conversation(user_id, chat_id):
+
     hotels = get_hotels(user_id=user_id)
     logger.info(f'Function {get_hotels.__name__} returned: {hotels}')
     db.set_history(user_id, hotels)
     if not hotels or len(hotels) < 1:
-        bot.send_message(chat_id, interface['errors']['hotels'][db.get_settings
-                                                                                (user_id=user_id, key='language')])
+        bot.send_message(chat_id, interface['errors']['hotels'][db.get_settings(user_id=user_id, key='language')])
     elif 'bad_request' in hotels:
-        bot.send_message(chat_id, interface['errors']['bad_request'][db.get_settings
-                                                                                (user_id=user_id, key='language')])
+        bot.send_message(chat_id, interface['errors']['bad_request'][db.get_settings(user_id=user_id, key='language')])
     else:
-        bot.send_message(chat_id,
-                         interface['responses']['hotels_found'][db.get_settings(user_id=user_id, key='language')]
-                         + ' ' + str(len(hotels)))
+        bot.send_message(chat_id, interface['responses']['hotels_found'][db.get_settings(user_id=user_id, key='language')] + str(len(hotels)))
         for hotel in hotels:
             bot.send_message(chat_id, hotel)
+            # bot.send_photo(id, photo, caption='Вставьте текст')
+
 
 
 bot.infinity_polling()
