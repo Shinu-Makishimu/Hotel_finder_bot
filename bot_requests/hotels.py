@@ -48,7 +48,7 @@ order = {
 
 
 # noinspection PyTypeChecker
-def get_hotels(user_id:str) -> object:
+def get_hotels(user_id:str) -> dict:
     """
     Функция получает юзер айди, на его основе формирует с помощью вспомогательных функций список результатов
     :param user_id:

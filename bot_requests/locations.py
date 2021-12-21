@@ -45,7 +45,6 @@ def request_locations(message):
 
     response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
     data = response.json()
-    # подумать что делать  если нету ничего в ответе
     return data
 
 

@@ -20,6 +20,8 @@ from settings import PHOTO_SIZE, API_TOKEN
 
 def make_photo_list(hotel_id:str, counter:int) -> list[str]:
     logger.info(f'function {make_photo_list.__name__} was called')
+    if counter == 0:
+        return []
     data = request_photos(hotel_id, counter)
     if not data:
         return ['bad_request']

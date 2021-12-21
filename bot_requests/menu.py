@@ -2,10 +2,13 @@ from language import interface
 from loguru import logger
 
 
-def start_reply(first_name:str, last_name:str, status:str, language:str) ->str:
+def start_reply(first_name: str, last_name: str, status: str, language: str) -> str:
     """
-    обработчик команды старт
-    :param message:
+    формирует строку приветсятвия
+    :param first_name:
+    :param last_name:
+    :param status:
+    :param language:
     :return:
     """
     logger.info(f'"{start_reply.__name__}" command is called')
@@ -18,7 +21,13 @@ def start_reply(first_name:str, last_name:str, status:str, language:str) ->str:
     return reply
 
 
-def settings_reply(language:str, currency:str):
+def settings_reply(language: str, currency: str) -> str:
+    """
+    формирует строку текущих настроек
+    :param language:
+    :param currency:
+    :return:
+    """
     reply = "{menu}\n{ans}\n {your_lang} {lang}\n {your_cur} {cur}".format(
         menu=interface['elements']['settings_menu'][language],
         ans=interface['responses']['your_settings'][language],

@@ -2,6 +2,7 @@ import datetime
 import sqlite3
 
 from loguru import logger
+from typing import Any
 
 from accessory import get_timestamp
 from settings import NAME_DATABASE, redis_db
@@ -222,7 +223,7 @@ def set_navigate(user_id: str or int, value: str) -> None:
     redis_db.hset(user_id, mapping={'status': value})
 
 
-def get_navigate(user_id: str or int) -> dict:
+def get_navigate(user_id: Any) -> str:
     logger.info(f'Function {get_navigate.__name__} called with argument: '
                 f'user_id {user_id}')
     result = redis_db.hget(user_id, 'status')
@@ -233,7 +234,6 @@ def get_navigate(user_id: str or int) -> dict:
 
 def set_history(user_id: str, result: dict) -> None:
     """
-    {'command': 'low price', 'city': 'Выборг', 'hotel_count': '12', 'photo_count': '3', 'order': 'PRICE', 'date': 1639429200.0, 'hotels': 'ссылка1*ссылка2*ссылка*3'}
     :param user_id:
     :param result:
     :return:

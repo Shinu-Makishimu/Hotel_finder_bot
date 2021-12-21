@@ -394,21 +394,29 @@ def min_max_price(message: types.Message) -> None:
 
 
 def end_conversation(user_id: str, chat_id: int) -> None:
+    """
+    конец диалога, формирование ответов
+    :param user_id:
+    :param chat_id:
+    :return:
+    """
     hotels = get_hotels(user_id=user_id)
     logger.info(f'Function {end_conversation.__name__}starts with : {hotels}')
-
+    lang= db.get_settings(user_id=user_id, key='language')
     if not hotels or len(hotels.keys()) < 1:
-        bot.send_message(chat_id, interface['errors']['hotels'][db.get_settings(user_id=user_id, key='language')])
+        bot.send_message(chat_id, interface['errors']['hotels'][lang])
     elif 'bad_request' in hotels:
-        bot.send_message(chat_id, interface['errors']['bad_request'][db.get_settings(user_id=user_id, key='language')])
+        bot.send_message(chat_id, interface['errors']['bad_request'][lang])
     else:
-        # db.set_history(user_id, hotels)
-        bot.send_message(chat_id,
-                         interface['responses']['hotels_found'][db.get_settings(user_id=user_id, key='language')]
-                         + ' ' + str(len(hotels.keys())))
+        db.set_history(user_id, hotels)
+        bot.send_message(chat_id, interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys())))
         for hotel_id, hotel_results in hotels.items():
-            bot.send_message(chat_id, hotel_results['message'])
-            # bot.send_photo(chat_id, photo=, caption=hotel_results['message'])
+            list_of_urls = hotel_results['photo']
+            message = hotel_results['message']
+            if len(list_of_urls) <1:
+                bot.send_message(chat_id, message)
+            else:
+                bot.send_photo(chat_id, photo=list_of_urls, caption=message)
 
 
 bot.infinity_polling()
