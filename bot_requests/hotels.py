@@ -1,13 +1,14 @@
-from typing import Type, List
+import json
+import re
+from typing import Any, Union
 
 import requests
-import re
-from database import get_settings
 from loguru import logger
+
 from accessory import get_date
-from language import interface
-import json
 from bot_requests.photos import make_photo_list
+from database import get_settings
+from language import interface
 from settings import API_TOKEN
 
 # памятка
@@ -46,7 +47,14 @@ order = {
 }
 
 
-def get_hotels(user_id):
+# noinspection PyTypeChecker
+def get_hotels(user_id:str) -> object:
+    """
+    Функция получает юзер айди, на его основе формирует с помощью вспомогательных функций список результатов
+    :param user_id:
+    :return: если сайт вернул bad request, возвращает bad request, если результата нет, none
+     иначе словарь с результатами
+    """
 
     logger.info(f'function {get_hotels.__name__} was called with user_id {user_id}')
     params = get_settings(user_id=user_id, key='all')
@@ -84,6 +92,14 @@ def get_hotels(user_id):
 
 
 def request_hotels(p, page=1):
+    """
+    функция запроса списка отелей из апи
+
+    почему то при использовании API_TOKEN, апи не принимает его. корректность в енв проверено
+    :param p:
+    :param page:
+    :return:
+    """
     logger.info(f'Function {request_hotels.__name__} called with argument: parameters = {p}')
     url = "https://hotels4.p.rapidapi.com/properties/list"
 
@@ -109,6 +125,7 @@ def request_hotels(p, page=1):
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
         'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
+        # 'x-rapidapi-key': API_TOKEN
     }
     try:
         response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
@@ -126,6 +143,12 @@ def request_hotels(p, page=1):
 
 
 def structure_hotels_info(user_id, data) -> dict:
+    """
+    Структурирование результатов поиск для удобной обработки в дальнейшем
+    :param user_id:
+    :param data:
+    :return:
+    """
     logger.info(f'Function {structure_hotels_info.__name__} called with args user_id = {user_id}, data = {data}')
     data = data.get('data', {}).get('body', {}).get('searchResults')
     hotels = dict()
@@ -168,9 +191,24 @@ def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[
     return hotels
 
 
-def generate_hotels_descriptions(hotels: dict, user_id: str) -> Type[dict]:
+def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[str, Union[str, list[str]]]]:
+    """
+    формирование словаря с результатами поиска. словарь вида:
+    hotels_info =
+                {
+                    "hotel_ID":
+                        {
+                            "photo": список изображений
+                            "message": сформированный ответ для пользователя
+                        }
+                }
+
+    :param hotels:
+    :param user_id:
+    :return:
+    """
     logger.info(f'Function {generate_hotels_descriptions.__name__} called with argument {hotels}')
-    hotels_info = dict
+    hotels_info = dict()
     # hotels_info = []
     photo_number = get_settings(user_id=user_id, key='photo_count')
     for hotel in hotels:
@@ -194,7 +232,7 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> Type[dict]:
 
         hotels_info.update(
             {
-                hotel.get('id'):
+                hotel.get('name'):
                     {
                         "message": message,
                         "photo": photo
@@ -205,8 +243,8 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> Type[dict]:
 
 
 def hotel_price(hotel) -> int:
+    logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
     price = 0
-
     if hotel.get('ratePlan').get('price').get('exactCurrent'):
         price = hotel.get('ratePlan').get('price').get('exactCurrent')
     else:
@@ -216,6 +254,7 @@ def hotel_price(hotel) -> int:
 
 
 def hotel_address(hotel: dict, user_id: str) -> str:
+    logger.info(f'Function {hotel_address.__name__} called with argument {hotel}')
     message = interface['errors']['no_information'][get_settings(user_id=user_id, key='language')]
     if hotel.get('address'):
         message = hotel.get('address').get('streetAddress', message)
@@ -223,6 +262,7 @@ def hotel_address(hotel: dict, user_id: str) -> str:
 
 
 def hotel_rating(rating: float, user_id: str) -> str:
+    logger.info(f'Function {hotel_rating.__name__} called with {rating}')
     if not rating:
         return interface['errors']['no_information'][get_settings(user_id=user_id, key='language')]
     return '⭐' * int(rating)

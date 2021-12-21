@@ -1,10 +1,8 @@
 import requests
-import re
-from database import get_settings
 from loguru import logger
 
-import json
-from settings import API_TOKEN, PHOTO_SIZE
+from settings import PHOTO_SIZE, API_TOKEN
+
 
 # url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
 #
@@ -29,12 +27,12 @@ def make_photo_list(hotel_id:str, counter:int) -> list[str]:
 
 
 def request_photos(hotel_id, counter):
-    url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
     logger.info(f'function {request_photos.__name__} was called with message and use args: '
                 f'lang: {hotel_id}\t text: {counter}')
 
+    photo_list = list()
+    url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
     querystring = {"id": hotel_id}
-
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
         'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
@@ -42,7 +40,7 @@ def request_photos(hotel_id, counter):
 
     response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
     data = response.json()
-    photo_list = list()
+    logger.info(f'function {request_photos.__name__} get {data}')
     for i_index, i_photo in enumerate(data['hotelImages']):
         if i_index == counter:
             break

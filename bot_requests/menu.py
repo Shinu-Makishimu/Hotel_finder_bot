@@ -2,7 +2,7 @@ from language import interface
 from loguru import logger
 
 
-def start_reply(first_name, last_name, status, language):
+def start_reply(first_name:str, last_name:str, status:str, language:str) ->str:
     """
     обработчик команды старт
     :param message:
@@ -18,7 +18,7 @@ def start_reply(first_name, last_name, status, language):
     return reply
 
 
-def settings_reply(language, currency):
+def settings_reply(language:str, currency:str):
     reply = "{menu}\n{ans}\n {your_lang} {lang}\n {your_cur} {cur}".format(
         menu=interface['elements']['settings_menu'][language],
         ans=interface['responses']['your_settings'][language],

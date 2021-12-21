@@ -1,10 +1,10 @@
-import sqlite3
 import datetime
-import re
-from accessory import get_timestamp, get_date
-from settings import NAME_DATABASE, redis_db
+import sqlite3
+
 from loguru import logger
 
+from accessory import get_timestamp
+from settings import NAME_DATABASE, redis_db
 
 #
 # памятка состояний навигации
@@ -21,10 +21,12 @@ from loguru import logger
 #
 #
 
-language_dict= {
+language_dict = {
     'ru': 'ru_RU',
     'en': 'en_US'
 }
+
+
 #################################### секция sqlite3 ####################################
 
 
@@ -58,7 +60,7 @@ def create_bd_if_not_exist() -> None:
         db.commit()
 
 
-def create_user_in_db(user_id: int, language:str) -> None:
+def create_user_in_db(user_id: str, language: str) -> None:
     logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
     currency = 'RUB'
     status = 'new'
@@ -80,7 +82,7 @@ def create_user_in_db(user_id: int, language:str) -> None:
         db.commit()
 
 
-def check_user_in_db(user_id: int) -> bool:
+def check_user_in_db(user_id: str) -> bool:
     logger.info(f'Function {check_user_in_db.__name__} called and use args: user_id\t{user_id}')
 
     with sqlite3.connect(NAME_DATABASE, check_same_thread=False) as db:
@@ -96,7 +98,7 @@ def check_user_in_db(user_id: int) -> bool:
         return True
 
 
-def get_user_from_bd(user_id: int)->list[str]:
+def get_user_from_bd(user_id: str) -> list[str]:
     logger.info(f'Function {get_user_from_bd.__name__} called use args: user_id\t{user_id}')
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -107,7 +109,7 @@ def get_user_from_bd(user_id: int)->list[str]:
         return response[0]
 
 
-def set_settings_in_db(user_id: int, key:str, value:str) -> None:
+def set_settings_in_db(user_id: str, key: str, value: str) -> None:
     logger.info(f'Function {set_settings_in_db.__name__} called with arguments: '
                 f'\nuser_id {user_id}\tkey {key}\tvalue {value} ')
 
@@ -126,7 +128,7 @@ def set_settings_in_db(user_id: int, key:str, value:str) -> None:
         db.commit()
 
 
-def create_history_record(user_id: int, hist_dict: dict)-> None:
+def create_history_record(user_id: str, hist_dict: dict) -> None:
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
 
@@ -165,8 +167,6 @@ def get_history_from_db(user_id: int) -> list[str]:
 
 
 def check_user_in_redis(user_id: int) -> bool:
-
-
     logger.info(f'Function {check_user_in_redis.__name__} called use args: user_id\t{user_id}')
 
     result_in_redis = redis_db.hgetall(user_id)
@@ -179,13 +179,12 @@ def check_user_in_redis(user_id: int) -> bool:
         return True
 
 
-def create_user_in_redis(user_id: int, language: str,first_name:str,last_name:str) -> None:
-
+def create_user_in_redis(user_id: str, language: str, first_name: str, last_name: str) -> None:
     logger.info(f'Function {create_user_in_redis.__name__} called with args: '
                 f'user_id{user_id}, language {language}, first name {first_name}, last name {last_name}')
 
     if language not in language_dict.keys():
-        language= 'en'
+        language = 'en'
     if not check_user_in_db(user_id=user_id):
         create_user_in_db(user_id=user_id, language=language_dict[language])
     user_id, language, currency, status = get_user_from_bd(user_id=user_id)
@@ -197,15 +196,15 @@ def create_user_in_redis(user_id: int, language: str,first_name:str,last_name:st
     logger.info(f'user with id {user_id} created ')
 
 
-def set_settings(user_id: int, key:str, value:str) -> None:
+def set_settings(user_id: str or int, key: str, value: str or int or float) -> None:
     logger.info(f'Function {set_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}\tvaluse {value}')
-    if key in ['language', 'currency','status']:
+    if key in ['language', 'currency', 'status']:
         set_settings_in_db(user_id, key, value)
     redis_db.hset(user_id, mapping={key: value})
 
 
-def get_settings(user_id: int or str, key: object = False) -> str:
+def get_settings(user_id: str or int, key: object = False) -> str:
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}')
     if key == 'all':
@@ -216,15 +215,14 @@ def get_settings(user_id: int or str, key: object = False) -> str:
         return redis_db.hget(user_id, key)
 
 
-
-def set_navigate(user_id: int, value:str) -> None:
+def set_navigate(user_id: str or int, value: str) -> None:
     logger.info(f'Function {set_navigate.__name__} called with argument: '
                 f'user_id {user_id}\tvalue{value}')
 
     redis_db.hset(user_id, mapping={'status': value})
 
 
-def get_navigate(user_id:int) -> dict:
+def get_navigate(user_id: str or int) -> dict:
     logger.info(f'Function {get_navigate.__name__} called with argument: '
                 f'user_id {user_id}')
     result = redis_db.hget(user_id, 'status')
@@ -233,7 +231,7 @@ def get_navigate(user_id:int) -> dict:
     # return re.search(r'\w+', str(result)[2:])[0]
 
 
-def set_history(user_id:int, result:dict) -> None:
+def set_history(user_id: str, result: dict) -> None:
     """
     {'command': 'low price', 'city': 'Выборг', 'hotel_count': '12', 'photo_count': '3', 'order': 'PRICE', 'date': 1639429200.0, 'hotels': 'ссылка1*ссылка2*ссылка*3'}
     :param user_id:

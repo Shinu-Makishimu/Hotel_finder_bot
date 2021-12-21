@@ -1,3 +1,5 @@
+from typing import Union, Dict, Any
+
 import requests
 import re
 from database import get_settings
@@ -5,7 +7,7 @@ from loguru import logger
 from settings import API_TOKEN
 
 
-def make_locations_list(message) -> dict:
+def make_locations_list(message) -> Union[dict[str, str], dict[str, Any]]:
     logger.info(f'function {make_locations_list.__name__} was called with message')
     data = request_locations(message)
     if not data:
@@ -47,7 +49,12 @@ def request_locations(message):
     return data
 
 
-def delete_tags(html_text):
+def delete_tags(html_text: Any) -> str:
+    """
+    функция удаления тегов из текста
+    :param html_text:
+    :return:
+    """
     logger.info(f'function {delete_tags.__name__} was called')
     text = re.sub('<([^<>]*)>', '', html_text)
     return text
@@ -62,24 +69,24 @@ def delete_tags(html_text):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ##################################################################################
-# import json
-# url = "https://hotels4.p.rapidapi.com/locations/v2/search"
-#
-# querystring = {"query":"new york","locale":"en_US","currency":"USD"}
-#
-# headers = {
-#     'x-rapidapi-host': "hotels4.p.rapidapi.com",
-#     'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
-#     }
-#
-# response = requests.request("GET", url, headers=headers, params=querystring)
-#
-# data = json.loads(response.text)
-#
-# with open('exmlpe_call.txt', 'w') as file:
-#     json.dump(data, file, indent=4)
-#
+
 
 # url = "https://hotels4.p.rapidapi.com/locations/v2/search"
 #
