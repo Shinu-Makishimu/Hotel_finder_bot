@@ -19,6 +19,12 @@ from settings import PHOTO_SIZE, API_TOKEN
 
 
 def make_photo_list(hotel_id:str, counter:int) -> list[str]:
+    """
+    Функция формирует список ссылок на фото отеля
+    :param hotel_id:
+    :param counter:
+    :return:
+    """
     logger.info(f'function {make_photo_list.__name__} was called')
     if counter == 0:
         return []
@@ -29,6 +35,12 @@ def make_photo_list(hotel_id:str, counter:int) -> list[str]:
 
 
 def request_photos(hotel_id, counter):
+    """
+    функция запрашивает у апи фотографии
+    :param hotel_id:
+    :param counter:
+    :return:
+    """
     logger.info(f'function {request_photos.__name__} was called with message and use args: '
                 f'lang: {hotel_id}\t text: {counter}')
 

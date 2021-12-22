@@ -171,9 +171,10 @@ def main_menu(user_id: int, command: str, chat_id: int) -> None:
         )
         bot.send_message(chat_id, reply, reply_markup=settings_keyboard)
     elif command == 'history':
-        # проверка на нюфага
-        # set_settings(msg=call, key='command', value='history')
-        # get_history()
+        # проверка на нюфага. если да, выпиныаать в главное меню
+        # Идея: берем json из sqlite. если поисков больше одного, формируем список инлайн кнопок.
+        # после нажатия на инлайн кнопку скармливаем json объект функции end conversation и он высирает результат!
+        # BRILLIANT!
         pass
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')

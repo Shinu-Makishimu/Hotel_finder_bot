@@ -38,6 +38,7 @@ def create_bd_if_not_exist() -> None:
     :return:
     """
     logger.info(f'Function {create_bd_if_not_exist.__name__} called')
+
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
 
@@ -75,14 +76,16 @@ def create_user_in_db(user_id: str, language: str) -> None:
     :return:
     """
     logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
+
     currency = 'RUB'
     status = 'new'
     if language != 'ru_RU':
         language = 'en_US'
         currency = 'EUR'
+
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
-        request = """INSERT INTO clients VALUES (?,?,?,?) """
+        request = """INSERT INTO clients VALUES (?,?,?,?);"""
         cursor.execute(
             request,
             (
@@ -124,12 +127,15 @@ def get_user_from_bd(user_id: str) -> list[str]:
     :return:
     """
     logger.info(f'Function {get_user_from_bd.__name__} called use args: user_id\t{user_id}')
+
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
         cursor.execute("""SELECT * FROM clients WHERE user_id=:user_id""",
                        {'user_id': user_id})
         response = cursor.fetchall()
+
         logger.info(f'I get this information in sqlite: {response[0]}')
+
         return response[0]
 
 
@@ -168,7 +174,9 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
     """
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
+
     name = hist_dict['first_name']+'_history.txt'
+
     with open(name, 'w') as file:
         json.dump(hist_dict, file, indent=4)
 
@@ -192,6 +200,12 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
 
 
 def get_history_from_db(user_id: int) -> list[str]:
+    """
+    функция получения истории поиска.
+    Идея: хранить json с параметрами поиска и результатами. и выдавать список таких json если их больше 1
+    :param user_id:
+    :return:
+    """
     logger.info(f'Function {get_history_from_db.__name__} called with argument: user_ id {user_id}')
 
     with sqlite3.connect(NAME_DATABASE) as db:
@@ -207,6 +221,11 @@ def get_history_from_db(user_id: int) -> list[str]:
 
 
 def check_user_in_redis(user_id: int) -> bool:
+    """
+    функция проверки наличия присутствия пользователя в редисе
+    :param user_id:
+    :return:
+    """
     logger.info(f'Function {check_user_in_redis.__name__} called use args: user_id\t{user_id}')
 
     result_in_redis = redis_db.hgetall(user_id)
@@ -220,6 +239,15 @@ def check_user_in_redis(user_id: int) -> bool:
 
 
 def create_user_in_redis(user_id: str, language: str, first_name: str, last_name: str) -> None:
+    """
+    Функция создания пользователя в редисе. При этом проверяется наличие пользователя в бд.
+    Если пользователь в бд есть то данные берутся оттуда
+    :param user_id:
+    :param language:
+    :param first_name:
+    :param last_name:
+    :return:
+    """
     logger.info(f'Function {create_user_in_redis.__name__} called with args: '
                 f'user_id{user_id}, language {language}, first name {first_name}, last name {last_name}')
 
@@ -236,7 +264,14 @@ def create_user_in_redis(user_id: str, language: str, first_name: str, last_name
     logger.info(f'user with id {user_id} created ')
 
 
-def set_settings(user_id: str or int, key: str, value: str or int or float) -> None:
+def set_settings(user_id: str or int, key: str, value: Any) -> None:
+    """
+    функция записи в редис ключа key  с параметром value
+    :param user_id:
+    :param key:
+    :param value:
+    :return:
+    """
     logger.info(f'Function {set_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}\tvaluse {value}')
     if key in ['language', 'currency', 'status']:
@@ -245,6 +280,12 @@ def set_settings(user_id: str or int, key: str, value: str or int or float) -> N
 
 
 def get_settings(user_id: str or int, key: object = False) -> str:
+    """
+    Функция получение настройки по ключу key
+    :param user_id:
+    :param key:
+    :return:
+    """
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}')
     if key == 'all':
@@ -256,6 +297,13 @@ def get_settings(user_id: str or int, key: object = False) -> str:
 
 
 def set_navigate(user_id: str or int, value: str) -> None:
+    """
+    Функция записи в редис отметки о том где пользователь
+    пока что не особо используется
+    :param user_id:
+    :param value:
+    :return:
+    """
     logger.info(f'Function {set_navigate.__name__} called with argument: '
                 f'user_id {user_id}\tvalue{value}')
 
@@ -263,6 +311,11 @@ def set_navigate(user_id: str or int, value: str) -> None:
 
 
 def get_navigate(user_id: Any) -> str:
+    """
+    функция выдачи из редиса отметки о навигации пользователя
+    :param user_id:
+    :return:
+    """
     logger.info(f'Function {get_navigate.__name__} called with argument: '
                 f'user_id {user_id}')
     result = redis_db.hget(user_id, 'status')
@@ -292,6 +345,11 @@ def set_history(user_id: str, result: dict) -> None:
 
 
 def kill_user(user_id: int or str) -> None:
+    """
+    Перед началом новой сессии поиска надо убить запись о пользователе в редисе
+    :param user_id:
+    :return:
+    """
     logger.info(f'Function {kill_user.__name__} called with arg {user_id}')
     if check_user_in_redis(user_id):
         redis_db.delete(user_id)
