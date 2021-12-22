@@ -33,7 +33,7 @@ logger_config = {
             "encoding": "utf-8",
             "level": "DEBUG",
             "rotation": "5 MB",
-            "mode": "a"
+            "mode": "w"
         },
     ],
 }

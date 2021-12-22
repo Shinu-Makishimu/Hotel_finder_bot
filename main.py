@@ -40,6 +40,7 @@ if not path.isfile(NAME_DATABASE):
 def commands_catcher(message: types.Message) -> None:
     """
     Функция ловит введённые команды пользователем
+    разделения по командам пока нет
     :param message:
     :return:
     """
@@ -365,7 +366,7 @@ def distanse_from_centre(message: types.Message) -> None:
         db.set_settings(user_id=str(message.from_user.id), key='distance', value=message.text.strip())
         msg = bot.send_message(message.chat.id,
                                interface['questions']['price'][db.get_settings(message.from_user.id, key='language')])
-        bot.register_next_step_handler(msg, photo_counter_answ)
+        bot.register_next_step_handler(msg, min_max_price)
     else:
         logger.info(f'Function {distanse_from_centre.__name__} called, user input IS NOT in  condition.')
         msg = bot.send_message(message.chat.id,
@@ -381,6 +382,8 @@ def min_max_price(message: types.Message) -> None:
         logger.info(f'min pr {min_price}, max pr {max_price}')
         db.set_settings(user_id=str(message.from_user.id), key='min_price', value=min_price)
         db.set_settings(user_id=str(message.from_user.id), key='max_price', value=max_price)
+        end_conversation(user_id=str(message.from_user.id), chat_id=message.chat.id)
+
 
     else:
         logger.info(f'Function {min_max_price.__name__} called, user input IS NOT in  condition.')
