@@ -120,6 +120,10 @@ interface = {
             'language': {
                 'ru_RU': 'Язык',
                 'en_US': 'Language'
+            },
+            'no_city': {
+                'ru_RU': 'Искомого города нет в списке!',
+                'en_US': 'The city i,m looking for is not in the list!'
             }
 
         },

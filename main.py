@@ -55,7 +55,11 @@ def commands_catcher(message: types.Message) -> None:
             last_name=message.from_user.last_name
         )
         logger.info(f'"start" command is called')
-    main_menu(user_id=message.from_user.id, command=message.text.strip('/'), chat_id=message.chat.id)
+    main_menu(
+        user_id=message.from_user.id,
+        command=message.text.strip('/'),
+        chat_id=message.chat.id
+    )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('main'))
@@ -68,7 +72,11 @@ def buttons_catcher_main(call: types.CallbackQuery) -> None:
     logger.info(f'Function {buttons_catcher_main.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
     bot.answer_callback_query(call.id)
-    main_menu(user_id=call.from_user.id, command=call.data.split('_')[1], chat_id=call.message.chat.id)
+    main_menu(
+        user_id=call.from_user.id,
+        command=call.data.split('_')[1],
+        chat_id=call.message.chat.id
+    )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('set'))
@@ -89,7 +97,11 @@ def buttons_catcher_settings(call: types.CallbackQuery) -> None:
         bot.send_message(call.message.chat.id, 'your answer ', reply_markup=language_keyboard)
     elif call.data == 'set_back':
         db.set_navigate(user_id=call.from_user.id, value='main')
-        main_menu(user_id=call.from_user.id, command='start', chat_id=call.message.chat.id)
+        main_menu(
+            user_id=call.from_user.id,
+            command='start',
+            chat_id=call.message.chat.id
+        )
     else:
         logger.warning(f'Function change language cannot recognise key {call.data}')
 
@@ -106,19 +118,39 @@ def buttons_catcher_money(call: types.CallbackQuery) -> None:
     bot.answer_callback_query(call.id)
 
     if call.data.endswith('RUB'):
-        db.set_settings(user_id=call.from_user.id, key='currency', value='RUB')
+        db.set_settings(
+            user_id=call.from_user.id,
+            key='currency',
+            value='RUB'
+        )
     elif call.data.endswith('USD'):
-        db.set_settings(user_id=call.from_user.id, key='currency', value='USD')
+        db.set_settings(
+            user_id=call.from_user.id,
+            key='currency',
+            value='USD'
+        )
     elif call.data.endswith('EUR'):
-        db.set_settings(user_id=call.from_user.id, key='currency', value='EUR')
+        db.set_settings(
+            user_id=call.from_user.id,
+            key='currency',
+            value='EUR'
+        )
     elif call.data.endswith('cancel'):
-        main_menu(user_id=call.from_user.id, command='start', chat_id=call.message.chat.id)
+        main_menu(
+            user_id=call.from_user.id,
+            command='start',
+            chat_id=call.message.chat.id
+        )
     else:
         logger.warning(f'Function change currency cannot recognise key {call.data}')
 
     reply = interface['responses']['saved'][db.get_settings(call.from_user.id, key='language')]
     bot.send_message(call.message.chat.id, reply)
-    main_menu(user_id=call.from_user.id, command='settings', chat_id=call.message.chat.id)
+    main_menu(
+        user_id=call.from_user.id,
+        command='settings',
+        chat_id=call.message.chat.id
+    )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('lang'))
@@ -133,13 +165,21 @@ def buttons_catcher_language(call: types.CallbackQuery) -> None:
     bot.answer_callback_query(call.id)
 
     if call.data.endswith('cancel'):
-        main_menu(user_id=call.from_user.id, command='settings', chat_id=call.message.chat.id)
+        main_menu(
+            user_id=call.from_user.id,
+            command='settings',
+            chat_id=call.message.chat.id
+        )
     else:
         db.set_settings(user_id=call.from_user.id, key='language', value=call.data[9:])
 
     reply = interface['responses']['saved'][call.data[9:]]
     bot.send_message(call.message.chat.id, reply)
-    main_menu(user_id=call.from_user.id, command='settings', chat_id=call.message.chat.id)
+    main_menu(
+        user_id=call.from_user.id,
+        command='settings',
+        chat_id=call.message.chat.id
+    )
 
 
 def main_menu(user_id: int, command: str, chat_id: int) -> None:
@@ -180,9 +220,8 @@ def main_menu(user_id: int, command: str, chat_id: int) -> None:
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
         db.set_settings(user_id=user_id, key='command', value=command)
-        bot.register_next_step_handler(bot.send_message(chat_id,
-                                                        interface['questions']['city'][lang]),
-                                       choose_city)
+        bot.register_next_step_handler(
+            bot.send_message(chat_id, interface['questions']['city'][lang]), choose_city)
 
 
 def choose_city(message: types.Message) -> None:
@@ -206,24 +245,40 @@ def choose_city(message: types.Message) -> None:
                 id_city = 0
                 for i in locations.values():
                     id_city = i
-                db.set_settings(user_id=message.from_user.id, key='city', value=id_city)
-                msg = bot.send_message(message.chat.id,
-                                       interface['questions']['count'][
-                                           db.get_settings(user_id=message.from_user.id, key='language')])
+                db.set_settings(
+                    user_id=message.from_user.id,
+                    key='city',
+                    value=id_city
+                )
+                msg = bot.send_message(
+                    message.chat.id,
+                    interface['questions']['count'][db.get_settings(user_id=message.from_user.id, key='language')]
+                )
                 bot.register_next_step_handler(msg, hotel_counter)
             else:
-                # добавить кнопку НЕТ МОЕГО ГОРОДА В СПИСКЕ
                 menu = telebot.types.InlineKeyboardMarkup()
                 for loc_name, loc_id in locations.items():
                     menu.add(telebot.types.InlineKeyboardButton(
                         text=loc_name,
                         callback_data='code' + loc_id)
                     )
-                bot.send_message(message.chat.id, interface['questions']['loc_choose'][language], reply_markup=menu)
+                menu.add(telebot.types.InlineKeyboardButton(
+                    text=interface['buttons']['no_city'][language],
+                    callback_data='another_one')
+                )
+                bot.send_message(
+                    message.chat.id,
+                    interface['questions']['loc_choose'][language],
+                    reply_markup=menu
+                )
     else:
         bot.send_message(message.chat.id, interface['errors']['city'][language])
-        bot.register_next_step_handler(bot.send_message(message.chat.id,
-                                                        interface['questions']['city'][language]), choose_city)
+        bot.register_next_step_handler(
+            bot.send_message(
+                message.chat.id,
+                interface['questions']['city'][language]),
+                choose_city
+        )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('code'))
@@ -235,11 +290,22 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
     """
     logger.info(f'Function {city_buttons_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
+
     bot.answer_callback_query(call.id)
-    db.set_settings(user_id=call.from_user.id, key='city', value=call.data[4:])
-    msg = bot.send_message(call.message.chat.id,
-                           interface['questions']['count'][db.get_settings(call.from_user.id, key='language')])
-    bot.register_next_step_handler(msg, hotel_counter)
+
+    if call.data == 'another_one':
+        main_menu(
+            user_id=call.from_user.id,
+            command=db.get_settings(user_id=call.from_user.id, key='command'),
+            chat_id=call.message.chat.id
+        )
+    else:
+        db.set_settings(user_id=call.from_user.id, key='city', value=call.data[4:])
+        msg = bot.send_message(
+            call.message.chat.id,
+            interface['questions']['count'][db.get_settings(call.from_user.id, key='language')]
+        )
+        bot.register_next_step_handler(msg, hotel_counter)
 
 
 def hotel_counter(message: types.Message) -> None:
@@ -251,14 +317,22 @@ def hotel_counter(message: types.Message) -> None:
     if ' ' not in message.text.strip() and message.text.strip().isdigit() and 0 < int(message.text.strip()) <= 20:
         logger.info(f'Function {hotel_counter.__name__} called, user input is in condition. use arg: '
                     f'hotel counter =  {message.text}')
-        db.set_settings(user_id=message.from_user.id, key='hotel_count', value=message.text.strip())
-        msg = bot.send_message(message.chat.id,
-                               interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')])
+        db.set_settings(
+            user_id=message.from_user.id,
+            key='hotel_count',
+            value=message.text.strip()
+        )
+        msg = bot.send_message(
+            message.chat.id,
+            interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')]
+        )
         bot.register_next_step_handler(msg, photo_counter_answ)
     else:
         logger.info(f'Function {hotel_counter.__name__} called, user input IS NOT in  condition.')
-        msg = bot.send_message(message.chat.id,
-                               interface['questions']['count'][db.get_settings(message.from_user.id, key='language')])
+        msg = bot.send_message(
+            message.chat.id,
+            interface['questions']['count'][db.get_settings(message.from_user.id, key='language')]
+        )
         bot.register_next_step_handler(msg, hotel_counter)
 
 
@@ -271,11 +345,16 @@ def photo_counter_answ(message: types.Message) -> None:
     logger.info(f'Function {photo_counter_answ.__name__} called, user input is in condition. use arg: '
                 f'{message.text}')
     if message.text.strip().isdigit() and 0 <= int(message.text.strip()) <= 5:
-        db.set_settings(user_id=message.from_user.id, key='photo_count', value=message.text)
+        db.set_settings(
+            user_id=message.from_user.id,
+            key='photo_count',
+            value=message.text
+        )
         choose_date(message)
     else:
-        msg = bot.send_message(message.chat.id,
-                               interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')])
+        msg = bot.send_message(
+            message.chat.id,
+            interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')])
         bot.register_next_step_handler(msg, photo_counter_answ)
 
 
@@ -312,11 +391,18 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
     result, key, step = DetailedTelegramCalendar(calendar_id=1).process(call.data)
     language = db.get_settings(user_id=call.from_user.id, key='language')
     if not result and key:
-        bot.edit_message_text(interface['questions']['date1'][language], call.message.chat.id, call.message.message_id,
-                              reply_markup=key)
+        bot.edit_message_text(
+            interface['questions']['date1'][language],
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=key
+        )
     elif result:
-        bot.edit_message_text(interface['responses']['check_in'][language] + '\n' + str(result), call.message.chat.id,
-                              call.message.message_id)
+        bot.edit_message_text(
+            interface['responses']['check_in'][language] + '\n' + str(result),
+            call.message.chat.id,
+            call.message.message_id
+        )
         result = get_timestamp(result)
         db.set_settings(user_id=call.from_user.id, key='date1', value=result)
         db.set_settings(user_id=call.from_user.id, key='date2', value=0)
@@ -335,21 +421,32 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
     result, key, step = DetailedTelegramCalendar(calendar_id=2).process(call.data)
 
     if not result and key:
-        bot.edit_message_text(interface['questions']['date2'][language], call.message.chat.id, call.message.message_id,
-                              reply_markup=key)
+        bot.edit_message_text(
+            interface['questions']['date2'][language],
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=key
+        )
     elif result:
-        if check_dates(check_in=float(db.get_settings(user_id=call.from_user.id, key='date1')),
-                       check_out=get_timestamp(result)):
-            bot.edit_message_text(interface['responses']['check_out'][language] + '\n' + str(result),
-                                  call.message.chat.id,
-                                  call.message.message_id)
+        if check_dates(
+                check_in=float(db.get_settings(user_id=call.from_user.id, key='date1')),
+                check_out=get_timestamp(result)):
+
+            bot.edit_message_text(
+                interface['responses']['check_out'][language] + '\n' + str(result),
+                call.message.chat.id,
+                call.message.message_id
+            )
             result = get_timestamp(result)
             db.set_settings(user_id=call.from_user.id, key='date2', value=result)
-            # hotel_result(call)
+
             if db.get_settings(user_id=call.from_user.id, key='command') not in ['lowprice', 'highprice']:
-                msg = bot.send_message(call.message.chat.id,
-                                       interface['questions']['radius'][db.get_settings
-                                       (user_id=call.from_user.id, key='language')])
+                msg = bot.send_message(
+                    call.message.chat.id,
+                    interface['questions']['radius'][db.get_settings(
+                        user_id=call.from_user.id,
+                        key='language')]
+                )
                 bot.register_next_step_handler(msg, distanse_from_centre)
             else:
                 end_conversation(user_id=str(call.from_user.id), chat_id=call.message.chat.id)
@@ -364,14 +461,22 @@ def distanse_from_centre(message: types.Message) -> None:
     logger.info(f'Function {distanse_from_centre.__name__} called, user input is in condition. use arg: '
                 f'distance =  {message.text}')
     if message.text.strip().isdigit():
-        db.set_settings(user_id=str(message.from_user.id), key='distance', value=message.text.strip())
-        msg = bot.send_message(message.chat.id,
-                               interface['questions']['price'][db.get_settings(message.from_user.id, key='language')])
+        db.set_settings(
+            user_id=str(message.from_user.id),
+            key='distance',
+            value=message.text.strip()
+        )
+        msg = bot.send_message(
+            message.chat.id,
+            interface['questions']['price'][db.get_settings(message.from_user.id, key='language')]
+        )
         bot.register_next_step_handler(msg, min_max_price)
     else:
         logger.info(f'Function {distanse_from_centre.__name__} called, user input IS NOT in  condition.')
-        msg = bot.send_message(message.chat.id,
-                               interface['questions']['radius'][db.get_settings(message.from_user.id, key='language')])
+        msg = bot.send_message(
+            message.chat.id,
+            interface['questions']['radius'][db.get_settings(message.from_user.id, key='language')]
+        )
         bot.register_next_step_handler(msg, distanse_from_centre)
 
 
@@ -381,14 +486,23 @@ def min_max_price(message: types.Message) -> None:
     if message.text.replace(' ', '').isdigit() and len(message.text.split()) == 2:
         min_price, max_price = sorted(message.text.strip().split(), key=int)
         logger.info(f'min pr {min_price}, max pr {max_price}')
-        db.set_settings(user_id=str(message.from_user.id), key='min_price', value=min_price)
-        db.set_settings(user_id=str(message.from_user.id), key='max_price', value=max_price)
-        # loadingu()
+        db.set_settings(
+            user_id=str(message.from_user.id),
+            key='min_price',
+            value=min_price
+        )
+        db.set_settings(
+            user_id=str(message.from_user.id),
+            key='max_price',
+            value=max_price
+        )
+
         end_conversation(user_id=str(message.from_user.id), chat_id=message.chat.id)
     else:
         logger.info(f'Function {min_max_price.__name__} called, user input IS NOT in  condition.')
-        msg = bot.send_message(message.chat.id,
-                               interface['errors']['price'][db.get_settings(message.from_user.id, key='language')])
+        msg = bot.send_message(
+            message.chat.id,
+            interface['errors']['price'][db.get_settings(message.from_user.id, key='language')])
         bot.register_next_step_handler(msg, min_max_price)
 
 
@@ -402,7 +516,11 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     """
     lang = db.get_settings(user_id=user_id, key='language')
     with open(path.join('files', 'loading.gif'), 'rb') as loading_gif:
-        bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
+        bot.send_animation(
+            chat_id=chat_id,
+            animation=loading_gif,
+            caption=interface['responses']['loading'][lang]
+        )
 
     # не работает :-(
     #     msg=bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
@@ -419,7 +537,10 @@ def end_conversation(user_id: str, chat_id: int) -> None:
         bot.send_message(chat_id, interface['errors']['bad_request'][lang])
     else:
         db.set_history(user_id, hotels)
-        bot.send_message(chat_id, interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys())))
+        bot.send_message(
+            chat_id,
+            interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys()))
+        )
         for hotel_id, hotel_results in hotels.items():
             list_of_urls = hotel_results['photo']
             message = hotel_results['message']
@@ -427,9 +548,6 @@ def end_conversation(user_id: str, chat_id: int) -> None:
                 bot.send_message(chat_id, message)
             else:
                 media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
-                # media_group = list()
-                # for i_elem in list_of_urls:
-                #     media_group.append(types.InputMediaPhoto(media=i_elem))
                 bot.send_media_group(chat_id, media=media_group)
                 bot.send_message(chat_id, message)
 
