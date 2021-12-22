@@ -1,7 +1,7 @@
 import requests
 from loguru import logger
 
-from settings import PHOTO_SIZE, API_TOKEN
+from settings import PHOTO_SIZE, H_API_TOKEN
 
 
 # url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
@@ -49,7 +49,7 @@ def request_photos(hotel_id, counter):
     querystring = {"id": hotel_id}
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
+        'x-rapidapi-key': H_API_TOKEN
         }
 
     response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)

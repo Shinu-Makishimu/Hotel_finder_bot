@@ -9,7 +9,7 @@ from accessory import get_date
 from bot_requests.photos import make_photo_list
 from database import get_settings
 from language import interface
-from settings import API_TOKEN
+from settings import H_API_TOKEN
 
 # памятка
 # querystring
@@ -119,13 +119,13 @@ def request_hotels(p, page=1):
         querystring['priceMax'] = p['max_price']
         querystring['priceMin'] = p['min_price']
         querystring['pageSize'] = '25'
-
-    logger.info(f'Search parameters: {querystring}')
+    experiment = "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
+    logger.info(f'Search parameters: {querystring}, token is {type(H_API_TOKEN)} value {H_API_TOKEN} '
+                f'comparison my wth experiment{experiment == H_API_TOKEN}')
 
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
-        # 'x-rapidapi-key': API_TOKEN
+        'x-rapidapi-key': H_API_TOKEN
     }
     try:
         response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)

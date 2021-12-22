@@ -4,7 +4,7 @@ import requests
 import re
 from database import get_settings
 from loguru import logger
-from settings import API_TOKEN
+from settings import H_API_TOKEN
 
 
 def make_locations_list(message) -> Union[dict[str, str], dict[str, Any]]:
@@ -32,16 +32,16 @@ def request_locations(message):
         "query": message.text.strip(),
         "locale": language
     }
-    headers = {
-        'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
-        }
-    #
-    # при подстановке этого хедера апи токен читается не правильно и апи возвращает бэд реквест
     # headers = {
     #     'x-rapidapi-host': "hotels4.p.rapidapi.com",
-    #     'x-rapidapi-key': API_TOKEN
+    #     'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
     #     }
+    #
+    # при подстановке этого хедера апи токен читается не правильно и апи возвращает бэд реквест
+    headers = {
+        'x-rapidapi-host': "hotels4.p.rapidapi.com",
+        'x-rapidapi-key': H_API_TOKEN
+        }
 
     response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
     data = response.json()

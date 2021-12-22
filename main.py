@@ -212,6 +212,7 @@ def choose_city(message: types.Message) -> None:
                                            db.get_settings(user_id=message.from_user.id, key='language')])
                 bot.register_next_step_handler(msg, hotel_counter)
             else:
+                # добавить кнопку НЕТ МОЕГО ГОРОДА В СПИСКЕ
                 menu = telebot.types.InlineKeyboardMarkup()
                 for loc_name, loc_id in locations.items():
                     menu.add(telebot.types.InlineKeyboardButton(
@@ -400,7 +401,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     :return:
     """
     hotels = get_hotels(user_id=user_id)
-    logger.info(f'Function {end_conversation.__name__}starts with : {hotels}')
+    logger.info(f'Function {end_conversation.__name__} starts with : {hotels}')
     lang= db.get_settings(user_id=user_id, key='language')
     if not hotels or len(hotels.keys()) < 1:
         bot.send_message(chat_id, interface['errors']['hotels'][lang])
