@@ -506,7 +506,6 @@ def min_max_price(message: types.Message) -> None:
         bot.register_next_step_handler(msg, min_max_price)
 
 
-
 def end_conversation(user_id: str, chat_id: int) -> None:
     """
     конец диалога, формирование ответов

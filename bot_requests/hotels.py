@@ -135,8 +135,8 @@ def request_hotels(p, page=1):
         logger.info(f'Hotels api(properties/list) response received: {data}')
         return data
 
-    except Exception as e:
-        logger.error(f'Error receiving response: {e}')
+    except Exception as error:
+        logger.error(f'Error receiving response: {error}')
         return {'bad_req': 'bad_req'}
 
 
@@ -155,7 +155,7 @@ def structure_hotels_info(user_id, data) -> dict:
     logger.info(f"Next page: {data.get('pagination', {}).get('nextPageNumber', 0)}")
     hotels['next_page'] = data.get('pagination', {}).get('nextPageNumber')
     hotels['results'] = []
-
+    lang = get_settings(user_id=user_id, key='language')
     if hotels['total_count'] > 0:
         for i_hotel in data.get('results'):
             hotel = dict()
@@ -165,11 +165,12 @@ def structure_hotels_info(user_id, data) -> dict:
             hotel['price'] = hotel_price(i_hotel)
             if not hotel['price']:
                 continue
-            hotel['distance'] = i_hotel.get('landmarks')[0].get(
-                'distance',
-                interface['errors']['no_information'][get_settings(user_id=user_id, key='language')]
+            hotel['distance'] = i_hotel.get(
+                'landmarks')[0].get(
+                    'distance',
+                    interface['errors']['no_information'][lang]
             )
-            hotel['address'] = hotel_address(i_hotel, user_id=user_id)
+            hotel['address'] = hotel_address(i_hotel, lang=lang)
 
             if hotel not in hotels['results']:
                 hotels['results'].append(hotel)
@@ -181,9 +182,7 @@ def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[
     logger.info(f'Function {choose_best_hotels.__name__} called with arguments: '
                 f'distance = {distance}, quantity = {limit}\n{hotels}')
     hotels = list(filter(lambda x: float(x["distance"].strip().replace(',', '.').split()[0]) <= distance, hotels))
-    logger.info(f'Hotels filtered: {hotels}')
     hotels = sorted(hotels, key=lambda x: x["price"])
-    logger.info(f'Hotels sorted: {hotels}')
     if len(hotels) > limit:
         hotels = hotels[:limit]
     return hotels
@@ -209,25 +208,36 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
     """
     logger.info(f'Function {generate_hotels_descriptions.__name__} called with argument {hotels}')
     hotels_info = dict()
-
+    lang = get_settings(user_id=user_id, key='language')
     photo_number = get_settings(user_id=user_id, key='photo_count')
+
     for hotel in hotels:
-        photo = make_photo_list(hotel_id=hotel.get('id'), counter=int(photo_number))
+        photo = make_photo_list(
+            hotel_id=hotel.get('id'),
+            counter=int(photo_number)
+        )
         message = (
-            f"{interface['elements']['hotel'][get_settings(user_id=user_id, key='language')]}: "
+            f"{interface['elements']['hotel'][lang]}: "
             f"{hotel.get('name')}\n"
 
-            f"{interface['elements']['rating'][get_settings(user_id=user_id, key='language')]}: "
-            f"{hotel_rating(rating=hotel.get('star_rating'), user_id=user_id)}\n"
+            f"{interface['elements']['rating'][lang]}: "
+            f"{hotel_rating(rating=hotel.get('star_rating'), lang=lang)}\n"
 
-            f"{interface['elements']['price'][get_settings(user_id=user_id, key='language')]}: "
+            f"{interface['elements']['price'][lang]}: "
             f"{hotel['price']} {get_settings(user_id=user_id, key='currency')}\n"
 
-            f"{interface['elements']['distance'][get_settings(user_id=user_id, key='language')]}: "
+            f"{interface['elements']['distance'][lang]}: "
             f"{hotel.get('distance')}\n"
 
-            f"{interface['elements']['address'][get_settings(user_id=user_id, key='language')]}: "
+            f"{interface['elements']['address'][lang]}: "
             f"{hotel.get('address')}\n"
+
+            # f"{interface['elements']['g_link'][lang]}: "
+            # f"{hotel.get("coordinate")}\n"
+
+            # f"{interface['elements']['client_rating'][lang]}: "
+            # f"{hotel.get("guestReviews").get("rating")}\n"
+
         )
 
         hotels_info.update(
@@ -256,16 +266,16 @@ def hotel_price(hotel) -> int:
     return price
 
 
-def hotel_address(hotel: dict, user_id: str) -> str:
+def hotel_address(hotel: dict, lang: str) -> str:
     logger.info(f'Function {hotel_address.__name__} called with argument {hotel}')
-    message = interface['errors']['no_information'][get_settings(user_id=user_id, key='language')]
+    message = interface['errors']['no_information'][lang]
     if hotel.get('address'):
         message = hotel.get('address').get('streetAddress', message)
     return message
 
 
-def hotel_rating(rating: float, user_id: str) -> str:
+def hotel_rating(rating: float, lang: str) -> str:
     logger.info(f'Function {hotel_rating.__name__} called with {rating}')
     if not rating:
-        return interface['errors']['no_information'][get_settings(user_id=user_id, key='language')]
+        return interface['errors']['no_information'][lang]
     return '⭐' * int(rating)

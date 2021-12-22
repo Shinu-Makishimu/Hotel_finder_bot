@@ -238,6 +238,14 @@ interface = {
             'settings_menu':{
                 'ru_RU': 'Меню настроек',
                 'en_US': 'Settings menu'
-            }
+            },
+            'g_link': {
+                'ru_RU': 'Ссылка на гуглокарты',
+                'en_US': 'Link for google maps'
+            },
+            'client_rating': {
+                'ru_RU': 'Стоимость',
+                'en_US': 'Price'
+            },
         }
 }
