@@ -61,7 +61,7 @@ def get_hotels(user_id:str) -> dict:
 
     data = request_hotels(p=params)
     if 'bad_req' in data:
-        return ['bad_request']
+        return {'bad_request': 'bad_request'}
 
     data = structure_hotels_info(user_id=user_id, data=data)
 
@@ -120,8 +120,7 @@ def request_hotels(p, page=1):
         querystring['priceMin'] = p['min_price']
         querystring['pageSize'] = '25'
     experiment = "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
-    logger.info(f'Search parameters: {querystring}, token is {type(H_API_TOKEN)} value {H_API_TOKEN} '
-                f'comparison my wth experiment{experiment == H_API_TOKEN}')
+    logger.info(f'Search parameters: {querystring},')
 
     headers = {
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
