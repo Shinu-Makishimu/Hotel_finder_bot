@@ -401,11 +401,16 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     :return:
     """
     lang = db.get_settings(user_id=user_id, key='language')
-    # with open(path.join('files', 'loading.gif'), 'rb') as loading_gif: # не работает :-(
+    with open(path.join('files', 'loading.gif'), 'rb') as loading_gif:
+        bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
+
+    # не работает :-(
     #     msg=bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
     # bot.edit_message_media(media=loading_gif, chat_id=chat_id, message_id=msg.message_id)
+
     hotels = get_hotels(user_id=user_id)
-    bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
+
+    #bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
     logger.info(f'Function {end_conversation.__name__} starts with : {hotels}')
 
     if not hotels or len(hotels.keys()) < 1:
