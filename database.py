@@ -148,7 +148,7 @@ def set_settings_in_db(user_id: str, key: str, value: str) -> None:
     :return:
     """
     logger.info(f'Function {set_settings_in_db.__name__} called with arguments: '
-                f'\nuser_id {user_id}\tkey {key}\tvalue {value} ')
+                f'user_id {user_id}\tkey {key}\tvalue {value} ')
 
     with sqlite3.connect(NAME_DATABASE, check_same_thread=False) as db:
         cursor = db.cursor()
@@ -347,6 +347,7 @@ def set_history(user_id: str, result: dict) -> None:
 def kill_user(user_id: int or str) -> None:
     """
     Перед началом новой сессии поиска надо убить запись о пользователе в редисе
+
     :param user_id:
     :return:
     """

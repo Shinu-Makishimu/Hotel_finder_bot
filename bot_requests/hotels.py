@@ -135,7 +135,7 @@ def request_hotels(p, page=1):
         logger.info(f'Hotels api(properties/list) response received: {data}')
         return data
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logger.error(f'Error receiving response: {e}')
         return {'bad_req': 'bad_req'}
 

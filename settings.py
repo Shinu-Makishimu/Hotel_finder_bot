@@ -5,9 +5,9 @@ content_type_ANY = ['audio', 'document', 'photo', 'sticker', 'video', 'voice', '
 
 commands_list = ['/start', '/lowprice', '/highprice', '/bestdeal', '/settings', '/help']
 
-API_TOKEN = config('KEY')
+API_TOKEN = config('KEY')  # токен бота
 
-H_API_TOKEN = config('APIKEY')
+H_API_TOKEN = config('APIKEY')  # токен hotels
 
 HOST = 'hotels4.p.rapidapi.com'
 
@@ -37,4 +37,5 @@ logger_config = {
         },
     ],
 }
+
 PHOTO_SIZE = "b"

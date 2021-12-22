@@ -383,14 +383,14 @@ def min_max_price(message: types.Message) -> None:
         logger.info(f'min pr {min_price}, max pr {max_price}')
         db.set_settings(user_id=str(message.from_user.id), key='min_price', value=min_price)
         db.set_settings(user_id=str(message.from_user.id), key='max_price', value=max_price)
+        # loadingu()
         end_conversation(user_id=str(message.from_user.id), chat_id=message.chat.id)
-
-
     else:
         logger.info(f'Function {min_max_price.__name__} called, user input IS NOT in  condition.')
         msg = bot.send_message(message.chat.id,
-                               interface['questions']['price'][db.get_settings(message.from_user.id, key='language')])
+                               interface['errors']['price'][db.get_settings(message.from_user.id, key='language')])
         bot.register_next_step_handler(msg, min_max_price)
+
 
 
 def end_conversation(user_id: str, chat_id: int) -> None:
@@ -400,9 +400,14 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     :param chat_id:
     :return:
     """
+    lang = db.get_settings(user_id=user_id, key='language')
+    # with open(path.join('files', 'loading.gif'), 'rb') as loading_gif: # не работает :-(
+    #     msg=bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
+    # bot.edit_message_media(media=loading_gif, chat_id=chat_id, message_id=msg.message_id)
     hotels = get_hotels(user_id=user_id)
+    bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
     logger.info(f'Function {end_conversation.__name__} starts with : {hotels}')
-    lang= db.get_settings(user_id=user_id, key='language')
+
     if not hotels or len(hotels.keys()) < 1:
         bot.send_message(chat_id, interface['errors']['hotels'][lang])
     elif 'bad_request' in hotels:
@@ -413,7 +418,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
         for hotel_id, hotel_results in hotels.items():
             list_of_urls = hotel_results['photo']
             message = hotel_results['message']
-            if len(list_of_urls) <1:
+            if len(list_of_urls) < 1:
                 bot.send_message(chat_id, message)
             else:
                 media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
@@ -424,4 +429,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
                 bot.send_message(chat_id, message)
 
 
-bot.infinity_polling()
+try:
+    bot.infinity_polling()
+except Exception as err:
+    logger.opt(exception=True).error(f'Unexpected error: {err}')

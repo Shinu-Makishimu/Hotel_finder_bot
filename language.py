@@ -196,7 +196,11 @@ interface = {
             'check_out': {
                 'ru_RU': 'Дата выезда',
                 'en_US': 'check out date'
-            }
+            },
+            'loading': {
+                'ru_RU': 'Загрузка, ждите...',
+                'en_US': 'Loading, please wait...'
+            },
 
 
         },

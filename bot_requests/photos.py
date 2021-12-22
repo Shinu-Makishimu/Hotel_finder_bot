@@ -51,14 +51,16 @@ def request_photos(hotel_id, counter):
         'x-rapidapi-host': "hotels4.p.rapidapi.com",
         'x-rapidapi-key': H_API_TOKEN
         }
-
-    response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
-    data = response.json()
-    logger.info(f'function {request_photos.__name__} get {data}')
-    for i_index, i_photo in enumerate(data['hotelImages']):
-        if i_index == counter:
-            break
-        photo_list.append(i_photo['baseUrl'].replace("{size}", PHOTO_SIZE))
+    try:
+        response = requests.request("GET", url, headers=headers, params=querystring, timeout=40)
+        data = response.json()
+        logger.info(f'function {request_photos.__name__} get {data}')
+        for i_index, i_photo in enumerate(data['hotelImages']):
+            if i_index == counter:
+                break
+            photo_list.append(i_photo['baseUrl'].replace("{size}", PHOTO_SIZE))
+    except requests.exceptions.ReadTimeout as error:
+        logger.error(f'Function {request_photos.__name__} was crushed with error {error} ')
 
     return photo_list
 
