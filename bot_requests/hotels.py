@@ -119,7 +119,6 @@ def request_hotels(p, page=1):
         querystring['priceMax'] = p['max_price']
         querystring['priceMin'] = p['min_price']
         querystring['pageSize'] = '25'
-    experiment = "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
     logger.info(f'Search parameters: {querystring},')
 
     headers = {
