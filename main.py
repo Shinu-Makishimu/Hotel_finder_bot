@@ -200,13 +200,23 @@ def choose_city(message: types.Message) -> None:
         elif locations.get('bad_request'):
             bot.send_message(message.chat.id, interface['errors']['bad_request'][language])
         else:
-            menu = telebot.types.InlineKeyboardMarkup()
-            for loc_name, loc_id in locations.items():
-                menu.add(telebot.types.InlineKeyboardButton(
-                    text=loc_name,
-                    callback_data='code' + loc_id)
-                )
-            bot.send_message(message.chat.id, interface['questions']['loc_choose'][language], reply_markup=menu)
+            if len(locations) == 1:
+                id_city = 0
+                for i in locations.values():
+                    id_city = i
+                db.set_settings(user_id=message.from_user.id, key='city', value=id_city)
+                msg = bot.send_message(message.chat.id,
+                                       interface['questions']['count'][
+                                           db.get_settings(user_id=message.from_user.id, key='language')])
+                bot.register_next_step_handler(msg, hotel_counter)
+            else:
+                menu = telebot.types.InlineKeyboardMarkup()
+                for loc_name, loc_id in locations.items():
+                    menu.add(telebot.types.InlineKeyboardButton(
+                        text=loc_name,
+                        callback_data='code' + loc_id)
+                    )
+                bot.send_message(message.chat.id, interface['questions']['loc_choose'][language], reply_markup=menu)
     else:
         bot.send_message(message.chat.id, interface['errors']['city'][language])
         bot.register_next_step_handler(bot.send_message(message.chat.id,
@@ -401,10 +411,10 @@ def end_conversation(user_id: str, chat_id: int) -> None:
             if len(list_of_urls) <1:
                 bot.send_message(chat_id, message)
             else:
-                # media_group= [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
-                media_group = list()
-                for i_elem in list_of_urls:
-                    media_group.append(types.InputMediaPhoto(media=i_elem))
+                media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
+                # media_group = list()
+                # for i_elem in list_of_urls:
+                #     media_group.append(types.InputMediaPhoto(media=i_elem))
                 bot.send_media_group(chat_id, media=media_group)
                 bot.send_message(chat_id, message)
 

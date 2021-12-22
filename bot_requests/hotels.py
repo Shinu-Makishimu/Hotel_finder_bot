@@ -202,14 +202,16 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
                             "message": сформированный ответ для пользователя
                         }
                 }
-
+    TODO_1: сделать линк на гуглокарты с координатами.
+        # http://www.google.com/maps/place/lat,lng
+    TODO_2: добавить рейтос от пользователей
     :param hotels:
     :param user_id:
     :return:
     """
     logger.info(f'Function {generate_hotels_descriptions.__name__} called with argument {hotels}')
     hotels_info = dict()
-    # hotels_info = []
+
     photo_number = get_settings(user_id=user_id, key='photo_count')
     for hotel in hotels:
         photo = make_photo_list(hotel_id=hotel.get('id'), counter=int(photo_number))

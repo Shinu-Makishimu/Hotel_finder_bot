@@ -33,6 +33,10 @@ language_dict = {
 
 
 def create_bd_if_not_exist() -> None:
+    """
+    функция создает базу данных если вдруг её нет. проверка на наличие бд в main
+    :return:
+    """
     logger.info(f'Function {create_bd_if_not_exist.__name__} called')
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -63,6 +67,13 @@ def create_bd_if_not_exist() -> None:
 
 
 def create_user_in_db(user_id: str, language: str) -> None:
+    """
+    Функция создаёт пользователя в базе данных
+
+    :param user_id:
+    :param language:
+    :return:
+    """
     logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
     currency = 'RUB'
     status = 'new'
@@ -85,6 +96,12 @@ def create_user_in_db(user_id: str, language: str) -> None:
 
 
 def check_user_in_db(user_id: str) -> bool:
+    """
+    Функция проверяет наличие присутствия пользователя в базе данных
+
+    :param user_id:
+    :return:
+    """
     logger.info(f'Function {check_user_in_db.__name__} called and use args: user_id\t{user_id}')
 
     with sqlite3.connect(NAME_DATABASE, check_same_thread=False) as db:
@@ -101,6 +118,11 @@ def check_user_in_db(user_id: str) -> bool:
 
 
 def get_user_from_bd(user_id: str) -> list[str]:
+    """
+    функция добывания пользователя из базы
+    :param user_id:
+    :return:
+    """
     logger.info(f'Function {get_user_from_bd.__name__} called use args: user_id\t{user_id}')
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -112,6 +134,13 @@ def get_user_from_bd(user_id: str) -> list[str]:
 
 
 def set_settings_in_db(user_id: str, key: str, value: str) -> None:
+    """
+    функция записи в базу ключевых параметров
+    :param user_id:
+    :param key:
+    :param value:
+    :return:
+    """
     logger.info(f'Function {set_settings_in_db.__name__} called with arguments: '
                 f'\nuser_id {user_id}\tkey {key}\tvalue {value} ')
 
@@ -131,9 +160,15 @@ def set_settings_in_db(user_id: str, key: str, value: str) -> None:
 
 
 def create_history_record(user_id: str, hist_dict: dict) -> None:
+    """
+    оформить json в sqlite (статья https://habr.com/ru/post/547448/)
+    :param user_id:
+    :param hist_dict:
+    :return:
+    """
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
-    name= hist_dict['first_name']+'_history.txt'
+    name = hist_dict['first_name']+'_history.txt'
     with open(name, 'w') as file:
         json.dump(hist_dict, file, indent=4)
 
