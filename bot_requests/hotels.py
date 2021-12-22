@@ -82,7 +82,7 @@ def get_hotels(user_id:str) -> dict:
                 next_page = add_data['next_page']
             else:
                 break
-        max_hotels_numbers = int(params['quantity'])
+        max_hotels_numbers = int(params['hotel_count'])
         data = choose_best_hotels(hotels=data['results'], distance=distance, limit=max_hotels_numbers)
     else:
         data = data['results']

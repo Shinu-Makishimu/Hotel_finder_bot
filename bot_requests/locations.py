@@ -8,7 +8,7 @@ from settings import API_TOKEN
 
 
 def make_locations_list(message) -> Union[dict[str, str], dict[str, Any]]:
-    logger.info(f'function {make_locations_list.__name__} was called with message')
+    logger.info(f'function {make_locations_list.__name__} was called with arg {message.text}')
     data = request_locations(message)
     if not data:
         return {'bad_request': 'bad_request'}
