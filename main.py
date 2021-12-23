@@ -243,13 +243,21 @@ def choose_city(message: types.Message) -> None:
         else:
             if len(locations) == 1:
                 id_city = 0
-                for i in locations.values():
-                    id_city = i
+                for loc_name, loc_id in locations.items():
+                    id_city = loc_id
+                    name_city=loc_name
+
                 db.set_settings(
                     user_id=message.from_user.id,
                     key='city',
                     value=id_city
                 )
+                db.set_settings(
+                    user_id=message.from_user.id,
+                    key='city_name',
+                    value=id_city
+                )
+
                 msg = bot.send_message(
                     message.chat.id,
                     interface['questions']['count'][db.get_settings(user_id=message.from_user.id, key='language')]
@@ -287,6 +295,7 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
     Функция, обрабатывающая нажатия кнопок городов.
     :param call:
     :return:
+    TODO: придумать как передать название города в кнопку
     """
     logger.info(f'Function {city_buttons_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
@@ -514,18 +523,19 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     :return:
     """
     lang = db.get_settings(user_id=user_id, key='language')
-    with open(path.join('files', 'loading.gif'), 'rb') as loading_gif:
-        bot.send_animation(
-            chat_id=chat_id,
-            animation=loading_gif,
-            caption=interface['responses']['loading'][lang]
-        )
-
+    # with open(path.join('files', 'loading.gif'), 'rb') as loading_gif:
+    #     bot.send_animation(
+    #         chat_id=chat_id,
+    #         animation=loading_gif,
+    #         caption=interface['responses']['loading'][lang]
+    #     )
     # не работает :-(
     #     msg=bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
     # bot.edit_message_media(media=loading_gif, chat_id=chat_id, message_id=msg.message_id)
-
+    msg = bot.send_message(chat_id=chat_id, text='буп')
+    bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=interface['responses']['loading'][lang])
     hotels = get_hotels(user_id=user_id)
+    bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
 
     #bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
     logger.info(f'Function {end_conversation.__name__} starts with : {hotels}')

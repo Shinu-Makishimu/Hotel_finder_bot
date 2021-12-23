@@ -233,10 +233,10 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
             f"{hotel.get('address')}\n"
 
             # f"{interface['elements']['g_link'][lang]}: "
-            # f"{hotel.get("coordinate")}\n"
+            # f"{hotel.get('coordinate')}\n"
 
-            # f"{interface['elements']['client_rating'][lang]}: "
-            # f"{hotel.get("guestReviews").get("rating")}\n"
+            f"{interface['elements']['client_rating'][lang]}: "
+            f"{hotel.get('guestReviews').get('rating')}\n"
 
         )
 
