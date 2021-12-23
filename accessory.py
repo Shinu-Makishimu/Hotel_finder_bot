@@ -38,5 +38,3 @@ def check_dates(check_in: float, check_out:float) -> bool:
         return True
 
 
-def create_html_links(l:list) ->str:
-    pass

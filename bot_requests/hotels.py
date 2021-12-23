@@ -62,7 +62,6 @@ def get_hotels(user_id:str) -> dict:
     data = request_hotels(p=params)
     if 'bad_req' in data:
         return {'bad_request': 'bad_request'}
-
     data = structure_hotels_info(user_id=user_id, data=data)
 
     if not data or len(data['results']) < 1:
@@ -149,20 +148,23 @@ def structure_hotels_info(user_id, data) -> dict:
     """
     logger.info(f'Function {structure_hotels_info.__name__} called with args user_id = {user_id}, data = {data}')
     data = data.get('data', {}).get('body', {}).get('searchResults')
+
     hotels = dict()
     hotels['total_count'] = data.get('totalCount', 0)
 
     logger.info(f"Next page: {data.get('pagination', {}).get('nextPageNumber', 0)}")
+
     hotels['next_page'] = data.get('pagination', {}).get('nextPageNumber')
     hotels['results'] = []
     lang = get_settings(user_id=user_id, key='language')
     if hotels['total_count'] > 0:
         for i_hotel in data.get('results'):
+            print(i_hotel)
             hotel = dict()
             hotel['name'] = i_hotel.get('name')
             hotel['id'] = i_hotel.get('id')
             hotel['star_rating'] = i_hotel.get('starRating', 0)
-            hotel['price'] = hotel_price(i_hotel)
+            hotel['price'] = hotel_price(i_hotel, lang)
             if not hotel['price']:
                 continue
             hotel['distance'] = i_hotel.get(
@@ -171,7 +173,7 @@ def structure_hotels_info(user_id, data) -> dict:
                     interface['errors']['no_information'][lang]
             )
             hotel['address'] = hotel_address(i_hotel, lang=lang)
-
+            hotel['coordinates'] = i_hotel.get('coordinate')
             if hotel not in hotels['results']:
                 hotels['results'].append(hotel)
         logger.info(f'Hotels in function {structure_hotels_info.__name__}: {hotels}')
@@ -200,7 +202,7 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
                         }
                 }
     TODO_1: сделать линк на гуглокарты с координатами.
-        # http://www.google.com/maps/place/lat,lng
+        # "http://www.google.com/maps/place/lat,lng"
     TODO_2: добавить рейтос от пользователей
     :param hotels:
     :param user_id:
@@ -210,35 +212,61 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
     hotels_info = dict()
     lang = get_settings(user_id=user_id, key='language')
     photo_number = get_settings(user_id=user_id, key='photo_count')
-
+    currency = get_settings(user_id=user_id, key='currency')
     for hotel in hotels:
         photo = make_photo_list(
             hotel_id=hotel.get('id'),
             counter=int(photo_number)
         )
+        hot_rat = hotel_rating(rating=hotel.get('star_rating'), lang=lang)
+
+        lang_hotel = interface['elements']['hotel'][lang],
+        name_hotel = hotel.get('name'),
+        rating_hotel = interface['elements']['rating'][lang],
+        rat_h = hot_rat,
+        pri_hot = interface['elements']['price'][lang],
+        price = str(hotel['price']) + currency,
+        dis_h = interface['elements']['distance'][lang],
+        dist = hotel.get('distance'),
+        addr_h = interface['elements']['address'][lang],
+        addr = hotel.get('address'),
+        glink = interface['elements']['g_link'][lang],
+        link = google_maps_link(coordinates=hotel['coordinates'],lang=lang)
+
+        # message = (
+        #     f"{interface['elements']['hotel'][lang]}: "
+        #     f"{hotel.get('name')}\n"
+        #
+        #     f"{interface['elements']['rating'][lang]}: "
+        #     f"{hotel_rating(rating=hotel.get('star_rating'), lang=lang)}\n"
+        #
+        #     f"{interface['elements']['price'][lang]}: "
+        #     f"{hotel['price']} {get_settings(user_id=user_id, key='currency')}\n"
+        #
+        #     f"{interface['elements']['distance'][lang]}: "
+        #     f"{hotel.get('distance')}\n"
+        #
+        #     f"{interface['elements']['address'][lang]}: "
+        #     f"{hotel.get('address')}\n"
+        #
+        #     f"{interface['elements']['g_link'][lang]}: "
+        #     f"{google_maps_link(coordinates=hotel['coordinates'],lang=lang)}\n"
+        #
+        # )
+
         message = (
-            f"{interface['elements']['hotel'][lang]}: "
-            f"{hotel.get('name')}\n"
-
-            f"{interface['elements']['rating'][lang]}: "
-            f"{hotel_rating(rating=hotel.get('star_rating'), lang=lang)}\n"
-
-            f"{interface['elements']['price'][lang]}: "
-            f"{hotel['price']} {get_settings(user_id=user_id, key='currency')}\n"
-
-            f"{interface['elements']['distance'][lang]}: "
-            f"{hotel.get('distance')}\n"
-
-            f"{interface['elements']['address'][lang]}: "
-            f"{hotel.get('address')}\n"
-
-            # f"{interface['elements']['g_link'][lang]}: "
-            # f"{hotel.get('coordinate')}\n"
-
-            f"{interface['elements']['client_rating'][lang]}: "
-            f"{hotel.get('guestReviews').get('rating')}\n"
-
-        )
+            f"{lang_hotel[0]}: "
+            f"{name_hotel[0]}\n"
+            f"{rating_hotel[0]}: "
+            f"{rat_h[0]}\n"
+            f"{pri_hot[0]}: "
+            f"{price[0]}\n"
+            f"{dis_h[0]}: "
+            f"{dist[0]}\n"
+            f"{addr_h[0]}: "
+            f"{addr[0]}\n"
+            f"{glink[0]}: "
+            f"{link}\n")
 
         hotels_info.update(
             {
@@ -252,7 +280,7 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
     return hotels_info
 
 
-def hotel_price(hotel) -> int:
+def hotel_price(hotel, lang) -> int:
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
     price = 0
     try:
@@ -263,6 +291,7 @@ def hotel_price(hotel) -> int:
             price = int(re.sub(r'[^0-9]', '', price))
     except Exception as error:
         logger.warning(f'price crushed with {error}')
+        price = interface['errors']['no_information'][lang]
     return price
 
 
@@ -279,3 +308,9 @@ def hotel_rating(rating: float, lang: str) -> str:
     if not rating:
         return interface['errors']['no_information'][lang]
     return '⭐' * int(rating)
+
+def google_maps_link(coordinates: dict, lang: str) -> str:
+    if not coordinates:
+        return interface['errors']['no_information'][lang]
+    link =f"http://www.google.com/maps/place/{coordinates['lat']},{coordinates['lon']}"
+    return link

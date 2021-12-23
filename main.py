@@ -1,18 +1,17 @@
-import telebot.types
 from loguru import logger
 from telebot import TeleBot, types
+from os import path
+
 from settings import API_TOKEN, NAME_DATABASE, logger_config, commands_list
 
 from accessory import get_timestamp, check_dates
 
 import database as db
-from keyboard import settings_keyboard, main_menu_keyboard, language_keyboard, money_keyboard
+import keyboard as kb
 from language import interface
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
-from os import path
-from bot_requests.locations import make_locations_list
-from bot_requests.hotels import get_hotels
-from bot_requests.menu import start_reply, settings_reply
+
+from bot_requests import menu, hotels, locations
 
 bot = TeleBot(API_TOKEN)
 logger.configure(**logger_config)
@@ -92,9 +91,9 @@ def buttons_catcher_settings(call: types.CallbackQuery) -> None:
     bot.answer_callback_query(call.id)
 
     if call.data == 'set_money':
-        bot.send_message(call.message.chat.id, 'your answer ', reply_markup=money_keyboard)
+        bot.send_message(call.message.chat.id, 'your answer ', reply_markup=kb.money_keyboard)
     elif call.data == 'set_language':
-        bot.send_message(call.message.chat.id, 'your answer ', reply_markup=language_keyboard)
+        bot.send_message(call.message.chat.id, 'your answer ', reply_markup=kb.language_keyboard)
     elif call.data == 'set_back':
         db.set_navigate(user_id=call.from_user.id, value='main')
         main_menu(
@@ -194,23 +193,24 @@ def main_menu(user_id: int, command: str, chat_id: int) -> None:
                 f'and use argument: user_id {user_id} key {command} chat_id {chat_id}')
     lang = db.get_settings(user_id, key='language')
     if command == 'start':
-        reply = start_reply(
+        reply = menu.start_reply(
             first_name=db.get_settings(user_id=user_id, key='first_name'),
             last_name=db.get_settings(user_id=user_id, key='last_name'),
             status=db.get_navigate(user_id),
             language=lang
         )
-        bot.send_message(chat_id, reply, reply_markup=main_menu_keyboard)
+        bot.send_message(chat_id, reply, reply_markup=kb.main_menu_keyboard)
     elif command == 'settings':
         db.set_settings(user_id=user_id, key='status', value='old')
         db.check_user_in_redis(user_id)
         logger.info(f'"settings" command is called with {user_id}')
         db.set_navigate(user_id, value='sett')  # а надо ли?
-        reply = settings_reply(
+
+        reply = menu.settings_reply(
             language=lang,
             currency=db.get_settings(user_id, key='currency')
         )
-        bot.send_message(chat_id, reply, reply_markup=settings_keyboard)
+        bot.send_message(chat_id, reply, reply_markup=kb.settings_keyboard)
     elif command == 'history':
         # проверка на нюфага. если да, выпиныаать в главное меню
         # Идея: берем json из sqlite. если поисков больше одного, формируем список инлайн кнопок.
@@ -234,18 +234,20 @@ def choose_city(message: types.Message) -> None:
     language = db.get_settings(user_id=message.from_user.id, key='language')
 
     if message.text.strip().replace(' ', '').replace('-', '').isalpha():
-        locations = make_locations_list(message)
-        logger.info(f'Location return: len= {len(locations)} values = {locations}')
-        if not locations or len(locations) < 1:
+
+        loc = locations.make_locations_list(message)
+        logger.info(f'Location return: len= {len(loc)} values = {loc}')
+        if not loc or len(loc) < 1:
             bot.send_message(message.chat.id, interface['errors']['city_not_found'][language])
-        elif locations.get('bad_request'):
+        elif loc.get('bad_request'):
             bot.send_message(message.chat.id, interface['errors']['bad_request'][language])
         else:
-            if len(locations) == 1:
+            if len(loc) == 1:
                 id_city = 0
-                for loc_name, loc_id in locations.items():
+                for loc_name, loc_id in loc.items():
                     id_city = loc_id
-                    name_city=loc_name
+                    name_city = loc_name
+                    # TODO: сделать запись имя города
 
                 db.set_settings(
                     user_id=message.from_user.id,
@@ -264,13 +266,13 @@ def choose_city(message: types.Message) -> None:
                 )
                 bot.register_next_step_handler(msg, hotel_counter)
             else:
-                menu = telebot.types.InlineKeyboardMarkup()
-                for loc_name, loc_id in locations.items():
-                    menu.add(telebot.types.InlineKeyboardButton(
+                menu = types.InlineKeyboardMarkup()
+                for loc_name, loc_id in loc.items():
+                    menu.add(types.InlineKeyboardButton(
                         text=loc_name,
                         callback_data='code' + loc_id)
                     )
-                menu.add(telebot.types.InlineKeyboardButton(
+                menu.add(types.InlineKeyboardButton(
                     text=interface['buttons']['no_city'][language],
                     callback_data='another_one')
                 )
@@ -285,7 +287,7 @@ def choose_city(message: types.Message) -> None:
             bot.send_message(
                 message.chat.id,
                 interface['questions']['city'][language]),
-                choose_city
+            choose_city
         )
 
 
@@ -532,27 +534,27 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     # не работает :-(
     #     msg=bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
     # bot.edit_message_media(media=loading_gif, chat_id=chat_id, message_id=msg.message_id)
-    msg = bot.send_message(chat_id=chat_id, text='буп')
+    msg = bot.send_message(chat_id=chat_id, text='опять мясной мешок заставляет работать')
     bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=interface['responses']['loading'][lang])
-    hotels = get_hotels(user_id=user_id)
+    hotels_result = hotels.get_hotels(user_id=user_id)
     bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
 
-    #bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
-    logger.info(f'Function {end_conversation.__name__} starts with : {hotels}')
+    # bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
+    logger.info(f'Function {end_conversation.__name__} starts with : {hotels_result}')
 
-    if not hotels or len(hotels.keys()) < 1:
+    if not hotels or len(hotels_result.keys()) < 1:
         bot.send_message(chat_id, interface['errors']['hotels'][lang])
-    elif 'bad_request' in hotels:
+    elif 'bad_request' in hotels_result:
         bot.send_message(chat_id, interface['errors']['bad_request'][lang])
     else:
-        db.set_history(user_id, hotels)
+        db.set_history(user_id, hotels_result)
         bot.send_message(
             chat_id,
-            interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys()))
+            interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels_result.keys()))
         )
-        for hotel_id, hotel_results in hotels.items():
-            list_of_urls = hotel_results['photo']
-            message = hotel_results['message']
+        for hotel_id, hotel_info in hotels_result.items():
+            list_of_urls = hotel_info['photo']
+            message = hotel_info['message']
             if len(list_of_urls) < 1:
                 bot.send_message(chat_id, message)
             else:
