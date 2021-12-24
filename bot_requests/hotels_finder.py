@@ -1,15 +1,13 @@
-import json
 import re
-from typing import Any, Union
-
 import requests
+from typing import Any, Union
 from loguru import logger
 
 from accessory import get_date
-from bot_requests.photos import make_photo_list
 from database import get_settings
 from language import interface
 from settings import H_API_TOKEN
+from bot_requests.photos import make_photo_list
 
 # памятка
 # querystring
@@ -159,7 +157,6 @@ def structure_hotels_info(user_id, data) -> dict:
     lang = get_settings(user_id=user_id, key='language')
     if hotels['total_count'] > 0:
         for i_hotel in data.get('results'):
-            print(i_hotel)
             hotel = dict()
             hotel['name'] = i_hotel.get('name')
             hotel['id'] = i_hotel.get('id')
@@ -309,8 +306,11 @@ def hotel_rating(rating: float, lang: str) -> str:
         return interface['errors']['no_information'][lang]
     return '⭐' * int(rating)
 
+
 def google_maps_link(coordinates: dict, lang: str) -> str:
     if not coordinates:
         return interface['errors']['no_information'][lang]
+    text = interface['elements']['g_link'][lang]
     link =f"http://www.google.com/maps/place/{coordinates['lat']},{coordinates['lon']}"
-    return link
+    r = f'<a href="{link}">{text}</a>'
+    return r

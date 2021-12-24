@@ -1,5 +1,5 @@
-from decouple import config
 import redis
+from decouple import config
 
 content_type_ANY = ['audio', 'document', 'photo', 'sticker', 'video', 'voice', 'contact', 'caption']
 

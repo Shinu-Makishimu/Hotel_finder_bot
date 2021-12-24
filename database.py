@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
 import json
+import pickle
 
 from loguru import logger
 from typing import Any
@@ -178,7 +179,8 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
     name = hist_dict['first_name']+'_history.txt'
 
     with open(name, 'w') as file:
-        json.dump(hist_dict, file, indent=4)
+        for key, val in hist_dict.items():
+            file.write('{}:{}\n'.format(key, val))
 
     # with sqlite3.connect(NAME_DATABASE) as db:
     #     cursor = db.cursor()
@@ -324,24 +326,23 @@ def get_navigate(user_id: Any) -> str:
     # return re.search(r'\w+', str(result)[2:])[0]
 
 
-def set_history(user_id: str, result: dict) -> None:
+def set_history(user_id: str, hotels: dict) -> None:
     """
     :param user_id:
     :param result:
     :return:
     """
     logger.info(f'Function {set_history.__name__} called with argument: '
-                f'user_id {user_id}\tresult:\n{result}')
+                f'user_id {user_id}\tresult:\n{hotels}')
     date = get_timestamp(datetime.datetime.now().date())
     result_from_redis = redis_db.hgetall(user_id)
-    # подготовка данных к запихиванию в sql
-    result_from_redis.update({'date': date})
-    result_from_redis.update({'hotels': result})
-    del result_from_redis['language']
-    del result_from_redis['currency']
-    del result_from_redis['status']
+    user = {key: value for key, value in result_from_redis.items()
+            if not key.isdigit() and key not in ['language', 'currency', 'status']}
 
-    create_history_record(user_id=user_id, hist_dict=result_from_redis)
+    user.update({'req_date': date})
+    user.update({'hotels': hotels})
+    print(user)
+    #create_history_record(user_id=user_id, hist_dict=result_from_redis)
 
 
 def kill_user(user_id: int or str) -> None:

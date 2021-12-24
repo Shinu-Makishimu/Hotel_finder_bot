@@ -2,24 +2,21 @@ from loguru import logger
 from telebot import TeleBot, types
 from os import path
 
-from settings import API_TOKEN, NAME_DATABASE, logger_config, commands_list
-
-from accessory import get_timestamp, check_dates
-
+from bot_requests import hotels_finder, locations,menu
+import settings as sett
 import database as db
 import keyboard as kb
+
 from language import interface
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+from accessory import get_timestamp, check_dates
 
-from bot_requests import menu, hotels, locations
-
-bot = TeleBot(API_TOKEN)
-logger.configure(**logger_config)
+bot = TeleBot(sett.API_TOKEN)
+logger.configure(**sett.logger_config)
 logger.info("\n" + "\\" * 50 + 'new session started' + "//" * 50 + "\n")
 
-if not path.isfile(NAME_DATABASE):
+if not path.isfile(sett.NAME_DATABASE):
     db.create_bd_if_not_exist()
-
 
 # памятка по отслеживанию пользователя
 
@@ -45,7 +42,7 @@ def commands_catcher(message: types.Message) -> None:
     """
     logger.info(f'Function {commands_catcher.__name__} called '
                 f'and use argument: {message.text}')
-    if message.text == commands_list[0]:
+    if message.text == sett.commands_list[0]:
         db.kill_user(message.from_user.id)
         db.create_user_in_redis(
             user_id=str(message.from_user.id),
@@ -243,22 +240,31 @@ def choose_city(message: types.Message) -> None:
             bot.send_message(message.chat.id, interface['errors']['bad_request'][language])
         else:
             if len(loc) == 1:
-                id_city = 0
                 for loc_name, loc_id in loc.items():
-                    id_city = loc_id
-                    name_city = loc_name
-                    # TODO: сделать запись имя города
+                    db.set_settings(
+                        user_id=message.from_user.id,
+                        key='city',
+                        value=loc_id
+                    )
+                    db.set_settings(
+                        user_id=message.from_user.id,
+                        key='city_name',
+                        value=loc_name
+                    )
 
-                db.set_settings(
-                    user_id=message.from_user.id,
-                    key='city',
-                    value=id_city
-                )
-                db.set_settings(
-                    user_id=message.from_user.id,
-                    key='city_name',
-                    value=id_city
-                )
+                    # id_city = loc_id
+                    # name_city = loc_name
+
+                # db.set_settings(
+                #     user_id=message.from_user.id,
+                #     key='city',
+                #     value=id_city
+                # )
+                # db.set_settings(
+                #     user_id=message.from_user.id,
+                #     key='city_name',
+                #     value=name_city
+                # )
 
                 msg = bot.send_message(
                     message.chat.id,
@@ -270,8 +276,9 @@ def choose_city(message: types.Message) -> None:
                 for loc_name, loc_id in loc.items():
                     menu.add(types.InlineKeyboardButton(
                         text=loc_name,
-                        callback_data='code' + loc_id)
+                        callback_data=f'code{loc_id}')
                     )
+                    db.set_settings(user_id=message.from_user.id, key=loc_id, value=loc_name)
                 menu.add(types.InlineKeyboardButton(
                     text=interface['buttons']['no_city'][language],
                     callback_data='another_one')
@@ -297,7 +304,6 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
     Функция, обрабатывающая нажатия кнопок городов.
     :param call:
     :return:
-    TODO: придумать как передать название города в кнопку
     """
     logger.info(f'Function {city_buttons_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
@@ -312,6 +318,8 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
         )
     else:
         db.set_settings(user_id=call.from_user.id, key='city', value=call.data[4:])
+        city_name = db.get_settings(user_id=call.from_user.id, key=call.data[4:])
+        db.set_settings(user_id=call.from_user.id, key='city_name', value=city_name)
         msg = bot.send_message(
             call.message.chat.id,
             interface['questions']['count'][db.get_settings(call.from_user.id, key='language')]
@@ -536,23 +544,22 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     # bot.edit_message_media(media=loading_gif, chat_id=chat_id, message_id=msg.message_id)
     msg = bot.send_message(chat_id=chat_id, text='опять мясной мешок заставляет работать')
     bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=interface['responses']['loading'][lang])
-    hotels_result = hotels.get_hotels(user_id=user_id)
+    hotels = hotels_finder.get_hotels(user_id=user_id)
     bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
 
-    # bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
-    logger.info(f'Function {end_conversation.__name__} starts with : {hotels_result}')
+    logger.info(f'Function {end_conversation.__name__} starts with : {hotels}')
 
-    if not hotels or len(hotels_result.keys()) < 1:
+    if not hotels or len(hotels.keys()) < 1:
         bot.send_message(chat_id, interface['errors']['hotels'][lang])
-    elif 'bad_request' in hotels_result:
+    elif 'bad_request' in hotels:
         bot.send_message(chat_id, interface['errors']['bad_request'][lang])
     else:
-        db.set_history(user_id, hotels_result)
+        db.set_history(user_id, hotels)
         bot.send_message(
             chat_id,
-            interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels_result.keys()))
+            interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys()))
         )
-        for hotel_id, hotel_info in hotels_result.items():
+        for hotel_id, hotel_info in hotels.items():
             list_of_urls = hotel_info['photo']
             message = hotel_info['message']
             if len(list_of_urls) < 1:
@@ -560,7 +567,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
             else:
                 media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
                 bot.send_media_group(chat_id, media=media_group)
-                bot.send_message(chat_id, message)
+                bot.send_message(chat_id, message, parse_mode='HTML')
 
 
 try:
