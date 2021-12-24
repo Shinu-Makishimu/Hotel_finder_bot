@@ -2,6 +2,7 @@ from datetime import datetime
 from loguru import logger
 from telebot import TeleBot, types
 from os import path
+from time import sleep
 
 import settings as sett
 import database as db
@@ -210,6 +211,19 @@ def main_menu(user_id: int, command: str, chat_id: int) -> None:
         )
         bot.send_message(chat_id, reply, reply_markup=kb.settings_keyboard)
     elif command == 'history':
+        status = db.get_settings(user_id, key='status')
+        if status == 'new':
+            msg = bot.send_message(chat_id=chat_id, text=' ')
+            bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id,
+                                  text=interface['errors']['no_history'][lang])
+            sleep(3)
+            bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
+        else:
+            msg = bot.send_message(chat_id=chat_id, text=' ')
+            bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id,
+                                  text='работа ведется')
+            sleep(3)
+            bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
         # проверка на нюфага. если да, выпиныаать в главное меню
         # Идея: берем json из sqlite. если поисков больше одного, формируем список инлайн кнопок.
         # после нажатия на инлайн кнопку скармливаем json объект функции end conversation и он высирает результат!
@@ -252,20 +266,6 @@ def choose_city(message: types.Message) -> None:
                         key='city_name',
                         value=loc_name
                     )
-
-                    # id_city = loc_id
-                    # name_city = loc_name
-
-                # db.set_settings(
-                #     user_id=message.from_user.id,
-                #     key='city',
-                #     value=id_city
-                # )
-                # db.set_settings(
-                #     user_id=message.from_user.id,
-                #     key='city_name',
-                #     value=name_city
-                # )
 
                 msg = bot.send_message(
                     message.chat.id,
@@ -469,7 +469,7 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
         )
     elif result:
         if check_dates(
-                check_in=float(db.get_settings(user_id=call.from_user.id, key='date1')),
+                check_in=int(db.get_settings(user_id=call.from_user.id, key='date1')),
                 check_out=get_timestamp(result)):
 
             bot.edit_message_text(
@@ -492,6 +492,7 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
                 end_conversation(user_id=str(call.from_user.id), chat_id=call.message.chat.id)
 
         else:
+            bot.send_message(chat_id=call.message.chat.id, text=interface['errors']['date2'][language])
             db.get_settings(user_id=call.from_user.id, key='date1', remove_kebab=True)
             db.get_settings(user_id=call.from_user.id, key='date2', remove_kebab=True)
             choose_date(call)

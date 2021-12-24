@@ -43,6 +43,10 @@ interface = {
                 'ru_RU': 'Дата въезда больше даты выезда',
                 'en_US': 'Check-in date is greater than check-out date'
             },
+            'date2': {
+                'ru_RU': 'Даты въезда и выезда не могут быть равны',
+                'en_US': 'Check-in and check-out dates cannot be equal'
+            },
             'city_not_found': {
                 'ru_RU': 'Запрошенный город не найден',
                 'en_US': 'The requested city was not found.'
@@ -50,6 +54,10 @@ interface = {
             'back_to_the_past': {
                 'ru_RU': 'Машина времени двумя этажами вниз!',
                 'en_US': 'Time machine down two floors!'
+            },
+            'no_history': {
+                'ru_RU': 'В базе нет истории запросов',
+                'en_US': 'There is no history of requests in the database'
             }
         },
     'questions':
