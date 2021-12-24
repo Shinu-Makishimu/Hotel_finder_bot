@@ -39,7 +39,6 @@ def create_bd_if_not_exist() -> None:
     :return:
     """
     logger.info(f'Function {create_bd_if_not_exist.__name__} called')
-
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
 
@@ -55,13 +54,42 @@ def create_bd_if_not_exist() -> None:
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         command TEXT,
-        price TEXT,
         city TEXT,
+        request_date TEXT,
         hotel_count TEXT,
-        photo_count INTEGER,
-        date REAL,
-        hotels TEXT);"""
+        photo_count TEXT,
+        distance TEXT,
+        min_price TEXT,
+        max_price TEXT,
+        date1 TEXT,
+        date2 TEXT);"""
 
+        cursor.execute(query)
+        cursor.execute(query_2)
+        cursor.execute(query_1)
+        db.commit()
+    # with sqlite3.connect(NAME_DATABASE) as db:
+    #     cursor = db.cursor()
+    #
+    #     query = """PRAGMA foreign_keys=on;"""
+    #     query_1 = """CREATE TABLE IF NOT EXISTS clients(
+    #     user_id INTEGER PRIMARY KEY NOT NULL,
+    #     language TEXT,
+    #     currency TEXT,
+    #     status TEXT,
+    #     FOREIGN KEY (user_id) REFERENCES requests (user_id)
+    #     );"""
+    #     query_2 = """CREATE TABLE IF NOT EXISTS requests(
+    #     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #     user_id INTEGER NOT NULL,
+    #     command TEXT,
+    #     price TEXT,
+    #     city TEXT,
+    #     hotel_count TEXT,
+    #     photo_count INTEGER,
+    #     date REAL,
+    #     hotels TEXT);"""
+    #
         cursor.execute(query)
         cursor.execute(query_2)
         cursor.execute(query_1)
@@ -172,33 +200,45 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
     :param user_id:
     :param hist_dict:
     :return:
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        command TEXT,
+        city TEXT,
+        hotel_count TEXT,
+        photo_count TEXT,
+        distance TEXT,
+        min_price TEXT,
+        max_price TEXT,
+        date1 TEXT,
+        date2 TEXT);
+
+
     """
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
 
-    name = hist_dict['first_name']+'_history.txt'
+    with sqlite3.connect(NAME_DATABASE) as db:
+        cursor = db.cursor()
+        request = """INSERT INTO requests VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?) """
+        cursor.execute(
+            request,
+            (
+                user_id,
+                hist_dict['command'],
+                hist_dict['city'],
+                hist_dict['req_date'],
+                hist_dict['hotel_count'],
+                hist_dict['photo_count'],
+                hist_dict['distance'],
+                hist_dict['min_price'],
+                hist_dict['max_price'],
+                hist_dict['date1'],
+                hist_dict['date2']
 
-    with open(name, 'w') as file:
-        for key, val in hist_dict.items():
-            file.write('{}:{}\n'.format(key, val))
-
-    # with sqlite3.connect(NAME_DATABASE) as db:
-    #     cursor = db.cursor()
-    #     request = """INSERT INTO requests VALUES (NULL,?,?,?,?,?,?,?,?) """
-    #     cursor.execute(
-    #         request,
-    #         (
-    #             user_id,
-    #             hist_dict['command'],
-    #             hist_dict['order'],
-    #             hist_dict['city'],
-    #             hist_dict['hotel_count'],
-    #             hist_dict['photo_count'],
-    #             hist_dict['date'],
-    #             hist_dict['hotels']
-    #         )
-    #     )
-    #     db.commit()
+            )
+        )
+        db.commit()
 
 
 def get_history_from_db(user_id: int) -> list[str]:
@@ -281,7 +321,7 @@ def set_settings(user_id: str or int, key: str, value: Any) -> None:
     redis_db.hset(user_id, mapping={key: value})
 
 
-def get_settings(user_id: str or int, key: object = False) -> str:
+def get_settings(user_id: str or int, key: object = False, remove_kebab: object=False) -> str:
     """
     Функция получение настройки по ключу key
     :param user_id:
@@ -289,11 +329,13 @@ def get_settings(user_id: str or int, key: object = False) -> str:
     :return:
     """
     logger.info(f'Function {get_settings.__name__} called with arguments: '
-                f'user_id {user_id}\tkey {key}')
+                f'user_id {user_id}\tkey {key}, remove {remove_kebab}')
     if key == 'all':
         return redis_db.hgetall(user_id)
     elif key not in redis_db.hgetall(user_id).keys():
         logger.info(f'Key {key} not found in redis! return {redis_db.hget(user_id, key)}')
+    elif remove_kebab:
+        redis_db.hdel(user_id, key)
     else:
         return redis_db.hget(user_id, key)
 
@@ -326,23 +368,27 @@ def get_navigate(user_id: Any) -> str:
     # return re.search(r'\w+', str(result)[2:])[0]
 
 
-def set_history(user_id: str, hotels: dict) -> None:
+def set_history(user_id: str) -> None:
     """
     :param user_id:
     :param result:
     :return:
     """
     logger.info(f'Function {set_history.__name__} called with argument: '
-                f'user_id {user_id}\tresult:\n{hotels}')
+                f'user_id {user_id}')
+    command = get_settings(user_id=user_id, key='command')
+
     date = get_timestamp(datetime.datetime.now().date())
     result_from_redis = redis_db.hgetall(user_id)
-    user = {key: value for key, value in result_from_redis.items()
-            if not key.isdigit() and key not in ['language', 'currency', 'status']}
 
-    user.update({'req_date': date})
-    user.update({'hotels': hotels})
-    print(user)
-    #create_history_record(user_id=user_id, hist_dict=result_from_redis)
+    user = {key: value for key, value in result_from_redis.items()
+            if not key.isdigit() and key not in ['language', 'currency', 'status', 'first_name', 'last_name','city_name']}
+    user.update({'req_date': str(date)})
+    if command in ['lowprice', 'highprice']:
+        user.update({'min_price': '-'})
+        user.update({'max_price': '-'})
+        user.update({'distance': '-'})
+    create_history_record(user_id=user_id, hist_dict=user)
 
 
 def kill_user(user_id: int or str) -> None:

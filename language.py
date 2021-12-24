@@ -46,6 +46,10 @@ interface = {
             'city_not_found': {
                 'ru_RU': 'Запрошенный город не найден',
                 'en_US': 'The requested city was not found.'
+            },
+            'back_to_the_past': {
+                'ru_RU': 'Машина времени двумя этажами вниз!',
+                'en_US': 'Time machine down two floors!'
             }
         },
     'questions':

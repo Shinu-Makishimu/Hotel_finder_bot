@@ -1,15 +1,16 @@
+from datetime import datetime
 from loguru import logger
 from telebot import TeleBot, types
 from os import path
 
-from bot_requests import hotels_finder, locations,menu
 import settings as sett
 import database as db
 import keyboard as kb
 
 from language import interface
-from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 from accessory import get_timestamp, check_dates
+from bot_requests import hotels_finder, locations,menu
+from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 
 bot = TeleBot(sett.API_TOKEN)
 logger.configure(**sett.logger_config)
@@ -281,7 +282,7 @@ def choose_city(message: types.Message) -> None:
                     db.set_settings(user_id=message.from_user.id, key=loc_id, value=loc_name)
                 menu.add(types.InlineKeyboardButton(
                     text=interface['buttons']['no_city'][language],
-                    callback_data='another_one')
+                    callback_data='code_red')
                 )
                 bot.send_message(
                     message.chat.id,
@@ -309,20 +310,19 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
                 f'user_id {call.from_user.id} and data: {call.data}')
 
     bot.answer_callback_query(call.id)
-
-    if call.data == 'another_one':
-        main_menu(
-            user_id=call.from_user.id,
-            command=db.get_settings(user_id=call.from_user.id, key='command'),
-            chat_id=call.message.chat.id
-        )
+    lang = db.get_settings(call.from_user.id, key='language')
+    if call.data == 'code_red':
+        bot.register_next_step_handler(
+            bot.send_message(
+                call.message.chat.id,
+                interface['questions']['city'][lang]), choose_city)
     else:
         db.set_settings(user_id=call.from_user.id, key='city', value=call.data[4:])
         city_name = db.get_settings(user_id=call.from_user.id, key=call.data[4:])
         db.set_settings(user_id=call.from_user.id, key='city_name', value=city_name)
         msg = bot.send_message(
             call.message.chat.id,
-            interface['questions']['count'][db.get_settings(call.from_user.id, key='language')]
+            interface['questions']['count'][lang]
         )
         bot.register_next_step_handler(msg, hotel_counter)
 
@@ -386,13 +386,22 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
     date_1 = db.get_settings(user_id=message.from_user.id, key='date1')
     date_2 = db.get_settings(user_id=message.from_user.id, key='date2')
     language = db.get_settings(user_id=message.from_user.id, key='language')
+
     logger.info(f'Function {choose_date.__name__} called with args:'
                 f' date_1 = {date_1} date_2 = {date_2} language {language}')
+
     if date_1 == 0 or date_1 is None:
+
         reply = interface['questions']['date1'][language]
         calendar, step = DetailedTelegramCalendar(calendar_id=1, locale=language[:2]).build()
-        bot.send_message(message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
-    else:  # date_2 == 0:
+        try:
+            # это очень нужно!
+            bot.send_message(message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
+        except Exception as e:
+            logger.info(f'Поймана ошибка {e}')
+            bot.send_message(message.message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
+    else:
+
         reply = interface['questions']['date2'][language]
         calendar, step = DetailedTelegramCalendar(calendar_id=2, locale=language[:2]).build()
         bot.send_message(message.message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
@@ -407,25 +416,37 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
     """
     # {LSTEP[step]}
     logger.info(f'Function {callback_calendar_1.__name__} called ')
+    result= key= step = ''
     result, key, step = DetailedTelegramCalendar(calendar_id=1).process(call.data)
-    language = db.get_settings(user_id=call.from_user.id, key='language')
+    lang = db.get_settings(user_id=call.from_user.id, key='language')
+
     if not result and key:
         bot.edit_message_text(
-            interface['questions']['date1'][language],
+            interface['questions']['date1'][lang],
             call.message.chat.id,
             call.message.message_id,
             reply_markup=key
         )
     elif result:
-        bot.edit_message_text(
-            interface['responses']['check_in'][language] + '\n' + str(result),
-            call.message.chat.id,
-            call.message.message_id
-        )
-        result = get_timestamp(result)
-        db.set_settings(user_id=call.from_user.id, key='date1', value=result)
-        db.set_settings(user_id=call.from_user.id, key='date2', value=0)
-        choose_date(call)
+        if result < datetime.now().date():
+            db.get_settings(user_id=call.from_user.id, key='date1', remove_kebab=True)
+            bot.edit_message_text(
+                text=interface['errors']['back_to_the_past'][lang],
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id
+            )
+            choose_date(call)
+        else:
+            logger.info(f' нормальный запрос')
+            bot.edit_message_text(
+                interface['responses']['check_in'][lang] + '\n' + str(result),
+                call.message.chat.id,
+                call.message.message_id
+            )
+            result = get_timestamp(result)
+            db.set_settings(user_id=call.from_user.id, key='date1', value=result)
+            db.set_settings(user_id=call.from_user.id, key='date2', value=0)
+            choose_date(call)
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
@@ -471,8 +492,8 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
                 end_conversation(user_id=str(call.from_user.id), chat_id=call.message.chat.id)
 
         else:
-            db.set_settings(user_id=call.from_user.id, key='date1', value=0)
-            db.set_settings(user_id=call.from_user.id, key='date2', value=0)
+            db.get_settings(user_id=call.from_user.id, key='date1', remove_kebab=True)
+            db.get_settings(user_id=call.from_user.id, key='date2', remove_kebab=True)
             choose_date(call)
 
 
@@ -554,7 +575,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     elif 'bad_request' in hotels:
         bot.send_message(chat_id, interface['errors']['bad_request'][lang])
     else:
-        db.set_history(user_id, hotels)
+        db.set_history(user_id)
         bot.send_message(
             chat_id,
             interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys()))

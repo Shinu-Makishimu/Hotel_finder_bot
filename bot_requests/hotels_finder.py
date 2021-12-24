@@ -227,7 +227,6 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
         dist = hotel.get('distance'),
         addr_h = interface['elements']['address'][lang],
         addr = hotel.get('address'),
-        glink = interface['elements']['g_link'][lang],
         link = google_maps_link(coordinates=hotel['coordinates'],lang=lang)
 
         # message = (
@@ -262,7 +261,6 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
             f"{dist[0]}\n"
             f"{addr_h[0]}: "
             f"{addr[0]}\n"
-            f"{glink[0]}: "
             f"{link}\n")
 
         hotels_info.update(
