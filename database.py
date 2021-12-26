@@ -1,13 +1,11 @@
 import datetime
 import sqlite3
-import json
-import pickle
 
 from loguru import logger
 from typing import Any
 
 from accessory import get_timestamp
-from settings import NAME_DATABASE, redis_db
+from settings import NAME_DATABASE, redis_db,USL
 
 #
 # памятка состояний навигации
@@ -55,6 +53,7 @@ def create_bd_if_not_exist() -> None:
         user_id INTEGER NOT NULL,
         command TEXT,
         city TEXT,
+        city_name, TEXT
         request_date TEXT,
         hotel_count TEXT,
         photo_count TEXT,
@@ -62,34 +61,35 @@ def create_bd_if_not_exist() -> None:
         min_price TEXT,
         max_price TEXT,
         date1 TEXT,
-        date2 TEXT);"""
+        date2 TEXT,
+        currency TEXT);"""
 
         cursor.execute(query)
         cursor.execute(query_2)
         cursor.execute(query_1)
         db.commit()
-    # with sqlite3.connect(NAME_DATABASE) as db:
-    #     cursor = db.cursor()
-    #
-    #     query = """PRAGMA foreign_keys=on;"""
-    #     query_1 = """CREATE TABLE IF NOT EXISTS clients(
-    #     user_id INTEGER PRIMARY KEY NOT NULL,
-    #     language TEXT,
-    #     currency TEXT,
-    #     status TEXT,
-    #     FOREIGN KEY (user_id) REFERENCES requests (user_id)
-    #     );"""
-    #     query_2 = """CREATE TABLE IF NOT EXISTS requests(
-    #     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #     user_id INTEGER NOT NULL,
-    #     command TEXT,
-    #     price TEXT,
-    #     city TEXT,
-    #     hotel_count TEXT,
-    #     photo_count INTEGER,
-    #     date REAL,
-    #     hotels TEXT);"""
-    #
+        # with sqlite3.connect(NAME_DATABASE) as db:
+        #     cursor = db.cursor()
+        #
+        #     query = """PRAGMA foreign_keys=on;"""
+        #     query_1 = """CREATE TABLE IF NOT EXISTS clients(
+        #     user_id INTEGER PRIMARY KEY NOT NULL,
+        #     language TEXT,
+        #     currency TEXT,
+        #     status TEXT,
+        #     FOREIGN KEY (user_id) REFERENCES requests (user_id)
+        #     );"""
+        #     query_2 = """CREATE TABLE IF NOT EXISTS requests(
+        #     id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     user_id INTEGER NOT NULL,
+        #     command TEXT,
+        #     price TEXT,
+        #     city TEXT,
+        #     hotel_count TEXT,
+        #     photo_count INTEGER,
+        #     date REAL,
+        #     hotels TEXT);"""
+        #
         cursor.execute(query)
         cursor.execute(query_2)
         cursor.execute(query_1)
@@ -211,7 +211,8 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
         min_price TEXT,
         max_price TEXT,
         date1 TEXT,
-        date2 TEXT);
+        date2 TEXT,
+        currency TEXT);
 
 
     """
@@ -220,28 +221,29 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
 
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
-        request = """INSERT INTO requests VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?) """
+        request = """INSERT INTO requests VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?) """
         cursor.execute(
             request,
             (
-                user_id,
-                hist_dict['command'],
-                hist_dict['city'],
-                hist_dict['req_date'],
-                hist_dict['hotel_count'],
-                hist_dict['photo_count'],
-                hist_dict['distance'],
-                hist_dict['min_price'],
-                hist_dict['max_price'],
-                hist_dict['date1'],
-                hist_dict['date2']
-
+                user_id,  # 2
+                hist_dict['command'],  # 3
+                hist_dict['city'],  # 4
+                hist_dict['city_name'],
+                hist_dict['req_date'],  # 5
+                hist_dict['hotel_count'],  # 6
+                hist_dict['photo_count'],  # 7
+                hist_dict['distance'],  # 8
+                hist_dict['min_price'],  # 9
+                hist_dict['max_price'],  # 10
+                hist_dict['date1'],  # 11
+                hist_dict['date2'],  # 12
+                hist_dict['currency']  # 13
             )
         )
         db.commit()
 
 
-def get_history_from_db(user_id: int) -> list[str]:
+def get_history_from_db(user_id: str, short = False) -> list[str]:
     """
     функция получения истории поиска.
     Идея: хранить json с параметрами поиска и результатами. и выдавать список таких json если их больше 1
@@ -249,20 +251,27 @@ def get_history_from_db(user_id: int) -> list[str]:
     :return:
     """
     logger.info(f'Function {get_history_from_db.__name__} called with argument: user_ id {user_id}')
-
-    with sqlite3.connect(NAME_DATABASE) as db:
-        cursor = db.cursor()
-        cursor.execute("""SELECT * FROM requests WHERE user_id=:user_id""",
-                       {'user_id': user_id})
-        response = cursor.fetchall()
-        logger.info(f'Get response from db \n{response}')
-        return response
+    if short:
+        with sqlite3.connect(NAME_DATABASE) as db:
+            cursor = db.cursor()
+            cursor.execute("""SELECT id, command, city_name FROM requests WHERE user_id=:user_id""",
+                           {'user_id': user_id})
+            response = cursor.fetchall()
+            logger.info(f'Get response from db \n{response}')
+    else:
+        with sqlite3.connect(NAME_DATABASE) as db:
+            cursor = db.cursor()
+            cursor.execute("""SELECT * FROM requests WHERE user_id=:user_id""",
+                           {'user_id': user_id})
+            response = cursor.fetchall()
+            logger.info(f'Get response from db \n{response}')
+    return response
 
 
 #################################### секция redis ####################################
 
 
-def check_user_in_redis(user_id: int) -> bool:
+def check_user_in_redis(user_id: str) -> bool:
     """
     функция проверки наличия присутствия пользователя в редисе
     :param user_id:
@@ -321,7 +330,7 @@ def set_settings(user_id: str or int, key: str, value: Any) -> None:
     redis_db.hset(user_id, mapping={key: value})
 
 
-def get_settings(user_id: str or int, key: object = False, remove_kebab: object=False) -> str:
+def get_settings(user_id: str or int, key: object = False, remove_kebab: object = False) -> str:
     """
     Функция получение настройки по ключу key
     :param user_id:
@@ -377,18 +386,37 @@ def set_history(user_id: str) -> None:
     logger.info(f'Function {set_history.__name__} called with argument: '
                 f'user_id {user_id}')
     command = get_settings(user_id=user_id, key='command')
-
+    currency = get_settings(user_id=user_id, key='currency')
     date = get_timestamp(datetime.datetime.now().date())
     result_from_redis = redis_db.hgetall(user_id)
 
     user = {key: value for key, value in result_from_redis.items()
-            if not key.isdigit() and key not in ['language', 'currency', 'status', 'first_name', 'last_name','city_name']}
-    user.update({'req_date': str(date)})
+            if
+            not key.isdigit() and key not in ['language', 'currency', 'status', 'first_name', 'last_name']}
+    user.update({'req_date': str(date),
+                 'currency': currency
+                 })
+
     if command in ['lowprice', 'highprice']:
         user.update({'min_price': '-'})
         user.update({'max_price': '-'})
         user.update({'distance': '-'})
     create_history_record(user_id=user_id, hist_dict=user)
+
+
+def get_history(user_id: str, short=False) -> list[str]:
+    logger.info(f'Function {get_history.__name__} was called with arg user_id{user_id}')
+    if short:
+        db_result = get_history_from_db(user_id=user_id, short=short)
+    else:
+        db_result = get_history_from_db(user_id=user_id)
+    return db_result
+
+
+def clean_settings(user_id:str) ->None:
+    logger.info(f'Function {clean_settings.__name__} was called with arg user_id{user_id}')
+    for element in USL:
+        redis_db.hdel(user_id, element)
 
 
 def kill_user(user_id: int or str) -> None:

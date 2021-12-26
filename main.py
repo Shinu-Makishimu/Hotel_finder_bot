@@ -1,14 +1,15 @@
-from datetime import datetime
-from loguru import logger
-from telebot import TeleBot, types
 from os import path
 from time import sleep
+from loguru import logger
+from datetime import datetime
+from telebot import TeleBot, types
 
-import settings as sett
+
 import database as db
 import keyboard as kb
-
+import settings as sett
 from language import interface
+
 from accessory import get_timestamp, check_dates
 from bot_requests import hotels_finder, locations,menu
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
@@ -54,7 +55,7 @@ def commands_catcher(message: types.Message) -> None:
         )
         logger.info(f'"start" command is called')
     main_menu(
-        user_id=message.from_user.id,
+        user_id=str(message.from_user.id),
         command=message.text.strip('/'),
         chat_id=message.chat.id
     )
@@ -71,7 +72,7 @@ def buttons_catcher_main(call: types.CallbackQuery) -> None:
                 f'user_id{call.from_user.id} and data: {call.data}')
     bot.answer_callback_query(call.id)
     main_menu(
-        user_id=call.from_user.id,
+        user_id=str(call.from_user.id),
         command=call.data.split('_')[1],
         chat_id=call.message.chat.id
     )
@@ -96,7 +97,7 @@ def buttons_catcher_settings(call: types.CallbackQuery) -> None:
     elif call.data == 'set_back':
         db.set_navigate(user_id=call.from_user.id, value='main')
         main_menu(
-            user_id=call.from_user.id,
+            user_id=str(call.from_user.id),
             command='start',
             chat_id=call.message.chat.id
         )
@@ -135,7 +136,7 @@ def buttons_catcher_money(call: types.CallbackQuery) -> None:
         )
     elif call.data.endswith('cancel'):
         main_menu(
-            user_id=call.from_user.id,
+            user_id=str(call.from_user.id),
             command='start',
             chat_id=call.message.chat.id
         )
@@ -145,7 +146,7 @@ def buttons_catcher_money(call: types.CallbackQuery) -> None:
     reply = interface['responses']['saved'][db.get_settings(call.from_user.id, key='language')]
     bot.send_message(call.message.chat.id, reply)
     main_menu(
-        user_id=call.from_user.id,
+        user_id=str(call.from_user.id),
         command='settings',
         chat_id=call.message.chat.id
     )
@@ -164,7 +165,7 @@ def buttons_catcher_language(call: types.CallbackQuery) -> None:
 
     if call.data.endswith('cancel'):
         main_menu(
-            user_id=call.from_user.id,
+            user_id=str(call.from_user.id),
             command='settings',
             chat_id=call.message.chat.id
         )
@@ -174,13 +175,13 @@ def buttons_catcher_language(call: types.CallbackQuery) -> None:
     reply = interface['responses']['saved'][call.data[9:]]
     bot.send_message(call.message.chat.id, reply)
     main_menu(
-        user_id=call.from_user.id,
+        user_id=str(call.from_user.id),
         command='settings',
         chat_id=call.message.chat.id
     )
 
 
-def main_menu(user_id: int, command: str, chat_id: int) -> None:
+def main_menu(user_id: str, command: str, chat_id: int) -> None:
     """
     функция формирующая главное меню, меню настроек и вызывает функции соответствующие нажатым кнопкам
     :param user_id: пользовательский id
@@ -192,6 +193,7 @@ def main_menu(user_id: int, command: str, chat_id: int) -> None:
                 f'and use argument: user_id {user_id} key {command} chat_id {chat_id}')
     lang = db.get_settings(user_id, key='language')
     if command == 'start':
+        db.clean_settings(user_id=user_id)
         reply = menu.start_reply(
             first_name=db.get_settings(user_id=user_id, key='first_name'),
             last_name=db.get_settings(user_id=user_id, key='last_name'),
@@ -219,21 +221,35 @@ def main_menu(user_id: int, command: str, chat_id: int) -> None:
             sleep(3)
             bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
         else:
-            msg = bot.send_message(chat_id=chat_id, text=' ')
-            bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id,
-                                  text='работа ведется')
-            sleep(3)
-            bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
-        # проверка на нюфага. если да, выпиныаать в главное меню
-        # Идея: берем json из sqlite. если поисков больше одного, формируем список инлайн кнопок.
-        # после нажатия на инлайн кнопку скармливаем json объект функции end conversation и он высирает результат!
-        # BRILLIANT!
-        pass
+            search_list = db.get_history_from_db(user_id=user_id, short=True)
+            history_menu = types.InlineKeyboardMarkup()
+            for search_string in search_list:
+                history_menu.add(types.InlineKeyboardButton(
+                    text=search_string[2],
+                    callback_data='history' + search_string[0]
+                ))
+            history_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
+
+            bot.send_message(chat_id=chat_id, text="it's worked")
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
         db.set_settings(user_id=user_id, key='command', value=command)
+
         bot.register_next_step_handler(
             bot.send_message(chat_id, interface['questions']['city'][lang]), choose_city)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('history'))
+def history_button_catcher(call):
+    logger.info(f'Function {history_button_catcher.__name__} called and use arg: '
+                f'user_id {call.from_user.id} and data: {call.data}')
+
+    bot.answer_callback_query(call.id)
+    lang = db.get_settings(call.from_user.id, key='language')
+    history = db.get_history_from_db(user_id=call.from_user.id)
+    history_answer_menu = types.InlineKeyboardMarkup()
+    history_answer_menu.add(types.InlineKeyboardButton(text='бахнуть поиск',callback_data='history_find_'))
+    history_answer_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
 
 
 def choose_city(message: types.Message) -> None:
@@ -273,21 +289,21 @@ def choose_city(message: types.Message) -> None:
                 )
                 bot.register_next_step_handler(msg, hotel_counter)
             else:
-                menu = types.InlineKeyboardMarkup()
+                city_menu = types.InlineKeyboardMarkup()
                 for loc_name, loc_id in loc.items():
-                    menu.add(types.InlineKeyboardButton(
+                    city_menu.add(types.InlineKeyboardButton(
                         text=loc_name,
                         callback_data=f'code{loc_id}')
                     )
                     db.set_settings(user_id=message.from_user.id, key=loc_id, value=loc_name)
-                menu.add(types.InlineKeyboardButton(
+                city_menu.add(types.InlineKeyboardButton(
                     text=interface['buttons']['no_city'][language],
                     callback_data='code_red')
                 )
                 bot.send_message(
                     message.chat.id,
                     interface['questions']['loc_choose'][language],
-                    reply_markup=menu
+                    reply_markup=city_menu
                 )
     else:
         bot.send_message(message.chat.id, interface['errors']['city'][language])
@@ -320,6 +336,7 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
         db.set_settings(user_id=call.from_user.id, key='city', value=call.data[4:])
         city_name = db.get_settings(user_id=call.from_user.id, key=call.data[4:])
         db.set_settings(user_id=call.from_user.id, key='city_name', value=city_name)
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         msg = bot.send_message(
             call.message.chat.id,
             interface['questions']['count'][lang]
@@ -507,10 +524,11 @@ def distanse_from_centre(message: types.Message) -> None:
             key='distance',
             value=message.text.strip()
         )
-        msg = bot.send_message(
-            message.chat.id,
-            interface['questions']['price'][db.get_settings(message.from_user.id, key='language')]
+        reply = menu.price_reply(
+            language=db.get_settings(message.from_user.id, key='language'),
+            currency=db.get_settings(message.from_user.id, key='currency')
         )
+        msg = bot.send_message(message.chat.id, reply)
         bot.register_next_step_handler(msg, min_max_price)
     else:
         logger.info(f'Function {distanse_from_centre.__name__} called, user input IS NOT in  condition.')
@@ -590,6 +608,9 @@ def end_conversation(user_id: str, chat_id: int) -> None:
                 media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
                 bot.send_media_group(chat_id, media=media_group)
                 bot.send_message(chat_id, message, parse_mode='HTML')
+    sleep(10)
+
+    main_menu(user_id=user_id, chat_id=chat_id, command='start')
 
 
 try:

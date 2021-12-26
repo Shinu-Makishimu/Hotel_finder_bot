@@ -28,13 +28,21 @@ def settings_reply(language: str, currency: str) -> str:
     :param currency:
     :return:
     """
-    reply = "{menu}\n{ans}\n {your_lang} {lang}\n {your_cur} {cur}".format(
+    reply = "\t\t{menu}\n\n{ans}:\n\t{your_lang}:\t{lang}\n\t{your_cur}:\t{cur}".format(
         menu=interface['elements']['settings_menu'][language],
         ans=interface['responses']['your_settings'][language],
         your_lang=interface['responses']['current_language'][language],
-        lang=language,
+        lang=language[3:],
         your_cur=interface['responses']['current_currency'][language],
         cur=currency
     )
     return reply
 
+
+def price_reply(language:str, currency: str) -> str:
+    reply = "{menu}\n{ans}: {cur}".format(
+        menu=interface['questions']['price'][language],
+        ans=interface['responses']['current_currency'][language],
+        cur=currency
+    )
+    return reply

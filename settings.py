@@ -32,10 +32,21 @@ logger_config = {
             "format": "{time} | {level} | {message}",
             "encoding": "utf-8",
             "level": "DEBUG",
-            "rotation": "5 MB",
-            "mode": "w"
+            "rotation": "2 MB",
+            "mode": "a"
         },
     ],
 }
+
+USL = ['city',
+       'request_date',
+       'hotel_count',
+       'photo_count',
+       'distance',
+       'min_price',
+       'max_price',
+       'date1',
+       'date2'
+       ]
 
 PHOTO_SIZE = "b"

@@ -37,12 +37,12 @@ money_keyboard = telebot.types.InlineKeyboardMarkup().add(
 
 button_l_rus = telebot.types.InlineKeyboardButton(text='Русский', callback_data='language_ru_RU')
 button_l_eng = telebot.types.InlineKeyboardButton(text='English', callback_data='language_en_US')
-button_l_spain = telebot.types.InlineKeyboardButton(text='Spain', callback_data='language_ESPA')
+# button_l_spain = telebot.types.InlineKeyboardButton(text='Spain', callback_data='language_ESPA')
 button_l_cancer = telebot.types.InlineKeyboardButton(text='cancel', callback_data='language_cancel')
 language_keyboard = telebot.types.InlineKeyboardMarkup().add(
     button_l_rus,
-    button_l_eng,
-    button_l_spain
+    button_l_eng
+    # button_l_spain
     )
 
 button_yes = telebot.types.InlineKeyboardButton(text='YES', callback_data='photo_yes')
