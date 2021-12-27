@@ -46,7 +46,7 @@ order = {
 
 
 # noinspection PyTypeChecker
-def get_hotels(user_id:str) -> dict:
+def get_hotels(user_id: str) -> dict:
     """
     Функция получает юзер айди, на его основе формирует с помощью вспомогательных функций список результатов
     :param user_id:
@@ -198,9 +198,6 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
                             "message": сформированный ответ для пользователя
                         }
                 }
-    TODO_1: сделать линк на гуглокарты с координатами.
-        # "http://www.google.com/maps/place/lat,lng"
-    TODO_2: добавить рейтос от пользователей
     :param hotels:
     :param user_id:
     :return:
@@ -227,7 +224,7 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
         dist = hotel.get('distance'),
         addr_h = interface['elements']['address'][lang],
         addr = hotel.get('address'),
-        link = google_maps_link(coordinates=hotel['coordinates'],lang=lang)
+        link = google_maps_link(coordinates=hotel['coordinates'], lang=lang)
 
         # message = (
         #     f"{interface['elements']['hotel'][lang]}: "
@@ -277,7 +274,6 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
 
 def hotel_price(hotel, lang) -> int:
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
-    price = 0
     try:
         if hotel.get('ratePlan').get('price').get('exactCurrent'):
             price = hotel.get('ratePlan').get('price').get('exactCurrent')
@@ -309,6 +305,6 @@ def google_maps_link(coordinates: dict, lang: str) -> str:
     if not coordinates:
         return interface['errors']['no_information'][lang]
     text = interface['elements']['g_link'][lang]
-    link =f"http://www.google.com/maps/place/{coordinates['lat']},{coordinates['lon']}"
+    link = f"http://www.google.com/maps/place/{coordinates['lat']},{coordinates['lon']}"
     r = f'<a href="{link}">{text}</a>'
     return r

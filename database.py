@@ -196,7 +196,6 @@ def set_settings_in_db(user_id: str, key: str, value: str) -> None:
 
 def create_history_record(user_id: str, hist_dict: dict) -> None:
     """
-    оформить json в sqlite (статья https://habr.com/ru/post/547448/)
     :param user_id:
     :param hist_dict:
     :return:
@@ -247,6 +246,7 @@ def get_history_from_db(user_id: str, short = False) -> list[str]:
     """
     функция получения истории поиска.
     Идея: хранить json с параметрами поиска и результатами. и выдавать список таких json если их больше 1
+    :param short:
     :param user_id:
     :return:
     """

@@ -46,3 +46,4 @@ def price_reply(language:str, currency: str) -> str:
         cur=currency
     )
     return reply
+

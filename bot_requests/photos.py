@@ -18,7 +18,7 @@ from settings import PHOTO_SIZE, H_API_TOKEN
 # print(response.text)
 
 
-def make_photo_list(hotel_id:str, counter:int) -> list[str]:
+def make_photo_list(hotel_id:str, counter: int) -> list[str]:
     """
     Функция формирует список ссылок на фото отеля
     :param hotel_id:
@@ -65,49 +65,3 @@ def request_photos(hotel_id, counter):
     return photo_list
 
 
-
-#
-#
-#
-# for i_hotel in json_data:
-#     print(i_hotel['hotelId'])
-#     for i_index, i_photo in enumerate(i_hotel['hotelImages']):
-#         if i_index == limit:
-#             break
-#         url = i_photo['baseUrl'].replace("{size}", )
-#         print(url)
-
-
-
-
-##################################################################################
-# import json
-# url = "https://hotels4.p.rapidapi.com/locations/v2/search"
-#
-# querystring = {"query":"new york","locale":"en_US","currency":"USD"}
-#
-# headers = {
-#     'x-rapidapi-host': "hotels4.p.rapidapi.com",
-#     'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
-#     }
-#
-# response = requests.request("GET", url, headers=headers, params=querystring)
-#
-# data = json.loads(response.text)
-#
-# with open('exmlpe_call.txt', 'w') as file:
-#     json.dump(data, file, indent=4)
-#
-
-# url = "https://hotels4.p.rapidapi.com/locations/v2/search"
-#
-# querystring = {"query":"new york","locale":"en_US","currency":"USD"}
-#
-# headers = {
-#     'x-rapidapi-host': "hotels4.p.rapidapi.com",
-#     'x-rapidapi-key': "163053c24amsh12466b55222e784p1eaa99jsn5c07d5ed2972"
-#     }
-#
-# response = requests.request("GET", url, headers=headers, params=querystring)
-#
-# print(response.text)

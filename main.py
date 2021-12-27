@@ -6,6 +6,7 @@ from telebot import TeleBot, types
 
 
 import database as db
+import keyboard
 import keyboard as kb
 import settings as sett
 from language import interface
@@ -54,11 +55,51 @@ def commands_catcher(message: types.Message) -> None:
             last_name=message.from_user.last_name
         )
         logger.info(f'"start" command is called')
-    main_menu(
-        user_id=str(message.from_user.id),
-        command=message.text.strip('/'),
-        chat_id=message.chat.id
-    )
+        main_menu(
+            user_id=str(message.from_user.id),
+            command=message.text.strip('/'),
+            chat_id=message.chat.id
+        )
+    elif message.text == sett.commands_list[5]:
+        logger.info(f'"help" command is called')
+        # msg = bot.send_message(chat_id=message.chat.id,text='loading')
+        # bot.register_next_step_handler(bot.send_message(chat_id=message.chat.id,text='loading'), help_menu)
+        help_menu(message)
+
+
+def help_menu(message: types.Message):
+    logger.info(f'Function {help_menu.__name__} called '
+                f'and use argument: {message.text}')
+    help_kb = keyboard.help_keyboard
+    bot.send_message(
+        chat_id=message.chat.id,
+        text= interface['responses']['help'][db.get_settings(user_id=message.from_user.id, key='language')],
+        reply_markup=help_kb,
+        parse_mode='HTML')
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('help'))
+def buttons_catcher_help(call: types.CallbackQuery) -> None:
+    logger.info(f'Function {buttons_catcher_help.__name__} was called with {call.data}')
+    lang=db.get_settings(user_id=call.from_user.id, key='language')
+    bot.answer_callback_query(call.id)
+    if call.data.endswith('low'):
+        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_l'][lang])
+    elif call.data.endswith('high'):
+        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_h'][lang])
+    elif call.data.endswith('sett'):
+        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_s'][lang])
+    elif call.data.endswith('best'):
+        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_b'][lang])
+    else:
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        main_menu(
+            user_id=str(call.from_user.id),
+            command='start',
+            chat_id=call.message.chat.id
+        )
+
+
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('main'))
@@ -192,14 +233,17 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
     logger.info(f'Function {main_menu.__name__} called '
                 f'and use argument: user_id {user_id} key {command} chat_id {chat_id}')
     lang = db.get_settings(user_id, key='language')
-    if command == 'start':
+    if command in ['start', 'another_one']:
         db.clean_settings(user_id=user_id)
-        reply = menu.start_reply(
-            first_name=db.get_settings(user_id=user_id, key='first_name'),
-            last_name=db.get_settings(user_id=user_id, key='last_name'),
-            status=db.get_navigate(user_id),
-            language=lang
-        )
+        if command == 'another_one':
+            reply = interface['responses']['another_one'][lang]
+        else:
+            reply = menu.start_reply(
+                first_name=db.get_settings(user_id=user_id, key='first_name'),
+                last_name=db.get_settings(user_id=user_id, key='last_name'),
+                status=db.get_navigate(user_id),
+                language=lang
+            )
         bot.send_message(chat_id, reply, reply_markup=kb.main_menu_keyboard)
     elif command == 'settings':
         db.set_settings(user_id=user_id, key='status', value='old')
@@ -229,7 +273,6 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
                     callback_data='history' + search_string[0]
                 ))
             history_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
-
             bot.send_message(chat_id=chat_id, text="it's worked")
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
@@ -362,7 +405,7 @@ def hotel_counter(message: types.Message) -> None:
             message.chat.id,
             interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')]
         )
-        bot.register_next_step_handler(msg, photo_counter_answ)
+        bot.register_next_step_handler(msg, photo_counter_answer)
     else:
         logger.info(f'Function {hotel_counter.__name__} called, user input IS NOT in  condition.')
         msg = bot.send_message(
@@ -372,13 +415,13 @@ def hotel_counter(message: types.Message) -> None:
         bot.register_next_step_handler(msg, hotel_counter)
 
 
-def photo_counter_answ(message: types.Message) -> None:
+def photo_counter_answer(message: types.Message) -> None:
     """
     функция обрабатывающая количество фотографий для каждого результата поиска
     :param message:
     :return:
     """
-    logger.info(f'Function {photo_counter_answ.__name__} called, user input is in condition. use arg: '
+    logger.info(f'Function {photo_counter_answer.__name__} called, user input is in condition. use arg: '
                 f'{message.text}')
     if message.text.strip().isdigit() and 0 <= int(message.text.strip()) <= 5:
         db.set_settings(
@@ -391,7 +434,7 @@ def photo_counter_answ(message: types.Message) -> None:
         msg = bot.send_message(
             message.chat.id,
             interface['questions']['photo'][db.get_settings(message.from_user.id, key='language')])
-        bot.register_next_step_handler(msg, photo_counter_answ)
+        bot.register_next_step_handler(msg, photo_counter_answer)
 
 
 def choose_date(message: types.Message or types.CallbackQuery) -> None:
@@ -433,7 +476,7 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
     """
     # {LSTEP[step]}
     logger.info(f'Function {callback_calendar_1.__name__} called ')
-    result= key= step = ''
+    # result= key= step = ''
     result, key, step = DetailedTelegramCalendar(calendar_id=1).process(call.data)
     lang = db.get_settings(user_id=call.from_user.id, key='language')
 
@@ -573,15 +616,6 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     :return:
     """
     lang = db.get_settings(user_id=user_id, key='language')
-    # with open(path.join('files', 'loading.gif'), 'rb') as loading_gif:
-    #     bot.send_animation(
-    #         chat_id=chat_id,
-    #         animation=loading_gif,
-    #         caption=interface['responses']['loading'][lang]
-    #     )
-    # не работает :-(
-    #     msg=bot.send_animation(chat_id=chat_id, animation=loading_gif, caption=interface['responses']['loading'][lang])
-    # bot.edit_message_media(media=loading_gif, chat_id=chat_id, message_id=msg.message_id)
     msg = bot.send_message(chat_id=chat_id, text='опять мясной мешок заставляет работать')
     bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=interface['responses']['loading'][lang])
     hotels = hotels_finder.get_hotels(user_id=user_id)
@@ -610,7 +644,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
                 bot.send_message(chat_id, message, parse_mode='HTML')
     sleep(10)
 
-    main_menu(user_id=user_id, chat_id=chat_id, command='start')
+    main_menu(user_id=user_id, chat_id=chat_id, command='another_one')
 
 
 try:

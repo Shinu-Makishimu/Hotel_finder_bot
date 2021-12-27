@@ -157,6 +157,10 @@ interface = {
                 'ru_RU': 'Вы выбрали',
                 'en_US': 'Your choice is'
             },
+            'another_one': {
+                'ru_RU': 'Ещё поищем?',
+                'en_US': "Let's look more?"
+            },
             'your_settings': {
                 'ru_RU': 'Ваши текущие настройки',
                 'en_US': 'Your current settings is'
@@ -217,6 +221,57 @@ interface = {
                 'ru_RU': 'Загрузка, ждите...',
                 'en_US': 'Loading, please wait...'
             },
+            'help': {
+                'ru_RU': (
+                    '<b>Команды бота</b>\n'
+                    '/help - список всех команд\n'
+                    '/lowprice - дешевые отели\n'
+                    '/highprice - дорогие отели\n'
+                    '/bestdeal - лучшие предложения по диапазону цен и расстоянию от центра\n'
+                    '/settings - настройки\n'
+                    'Что бы получить подробную справку по функционалу бота, нажмите на соответствующую кнопку\n'
+                ),
+                'en_US': (
+                    '<b>Bot commands</b>\n'
+                    '/help - list of all commands\n'
+                    '/lowprice - cheap hotels\n'
+                    '/highprice - luxury hotels\n'
+                    '/bestdeal - best offers in terms of price range and distance from the center\n'
+                    '/settings - settings\n'
+                    'To get detailed information, help on the functionality of the bot, '
+                    'click on the corresponding button\n'
+                )
+            },
+            'help_l': {
+                'ru_RU': 'Отвечайте на запросы бота о городе, количестве отелей в выдаче и количество фото отеля.\n'
+                         'В выдаче будут самые дешевые отели',
+                'en_US': "Answer the bot's queries about the city, the number of hotels in the search results"
+                         " and the number of hotel photos.\n"
+                         "The most cheapest hotels will be listed"
+
+            },
+            'help_b': {
+                'ru_RU': 'Отвечайте на запросы бота о городе, количестве отелей в выдаче, количество фото отеля,'
+                         'радиус поиска от центра города в км и диапазон цены через пробел\n'
+                        'В выдаче будут отели, удовлетворяющие введенным условиям',
+                'en_US': "Answer bot queries about the city, the number of hotels in the search results, "
+                         "the number of hotel photos, the search radius from the city center in km and the price range "
+                         "separated by a gap\n"
+                         "The results will include hotels that meet the entered conditions"
+            },
+            'help_h': {
+                'ru_RU': 'Отвечайте на запросы бота о городе, количестве отелей в выдаче и количество фото отеля.\n'
+                         'В выдаче будут самые дорогие отели',
+                'en_US': "Answer the bot's queries about the city, the number of hotels in the search results"
+                         " and the number of hotel photos.\n"
+                         "The most expensive hotels will be listed"
+            },
+            'help_s': {
+                'ru_RU': 'показывает меню настроек,где вы можете выбрать язык поиска '
+                         'или выбрать предпочтительную валюту',
+                'en_US': "shows the settings menu, where you can choose your search language or "
+                         "choose your preferred currency"
+            }
 
 
         },
