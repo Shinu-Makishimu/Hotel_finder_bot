@@ -5,7 +5,7 @@ from loguru import logger
 from typing import Any
 
 from accessory import get_timestamp
-from settings import NAME_DATABASE, redis_db,USL
+from settings import NAME_DATABASE, redis_db, USL
 
 #
 # памятка состояний навигации
@@ -242,7 +242,7 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
         db.commit()
 
 
-def get_history_from_db(user_id: str, short = False) -> list[str]:
+def get_history_from_db(user_id: str, short=False) -> list[str]:
     """
     функция получения истории поиска.
     Идея: хранить json с параметрами поиска и результатами. и выдавать список таких json если их больше 1
@@ -430,3 +430,30 @@ def kill_user(user_id: int or str) -> None:
     if check_user_in_redis(user_id):
         redis_db.delete(user_id)
         logger.info(f'hitman report: user with id {user_id} was killed')
+
+
+def prepare_history_for_search(user_id: str) -> None:
+    logger.info(f'function {prepare_history_for_search.__name__} was called')
+    clean_settings(user_id=user_id)
+    history_record = get_history_from_db(user_id=user_id)
+    record_id = get_settings(user_id=user_id, key='history_id')
+    record = ()
+
+    for i_rec in range(len(history_record)):
+        if int(history_record[i_rec][0]) == int(record_id):
+            record = history_record[i_rec]
+
+    set_settings(user_id , 'city', record[3])
+    set_settings(user_id, 'hotel_count', record[6])
+    set_settings(user_id, 'photo_count', record[7])
+    set_settings(user_id, 'date1', record[11])
+    set_settings(user_id, 'date2', record[12])
+    set_settings(user_id, 'command', record[2])
+    set_settings(user_id, 'currency', record[13])
+    set_settings(user_id, 'city_name', record[4])
+
+    if record[2] == 'bestdeal':
+        set_settings(user_id, 'max_price', record [10])
+        set_settings(user_id, 'min_price', record[9])
+        set_settings(user_id, 'distance',  record[8])
+

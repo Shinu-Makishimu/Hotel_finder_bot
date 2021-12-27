@@ -257,6 +257,7 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
         )
         bot.send_message(chat_id, reply, reply_markup=kb.settings_keyboard)
     elif command == 'history':
+
         status = db.get_settings(user_id, key='status')
         if status == 'new':
             msg = bot.send_message(chat_id=chat_id, text=' ')
@@ -270,10 +271,11 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
             for search_string in search_list:
                 history_menu.add(types.InlineKeyboardButton(
                     text=search_string[2],
-                    callback_data='history' + search_string[0]
+                    callback_data='history' + str(search_string[0])
                 ))
             history_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
-            bot.send_message(chat_id=chat_id, text="it's worked")
+            bot.send_message(chat_id=chat_id, text="список запросов", reply_markup=history_menu)
+
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
         db.set_settings(user_id=user_id, key='command', value=command)
@@ -284,15 +286,49 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('history'))
 def history_button_catcher(call):
+
     logger.info(f'Function {history_button_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
 
     bot.answer_callback_query(call.id)
-    lang = db.get_settings(call.from_user.id, key='language')
-    history = db.get_history_from_db(user_id=call.from_user.id)
-    history_answer_menu = types.InlineKeyboardMarkup()
-    history_answer_menu.add(types.InlineKeyboardButton(text='бахнуть поиск',callback_data='history_find_'))
-    history_answer_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
+    user_id = call.from_user.id
+    chat_id = call.message.chat.id
+    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    if call.data.endswith('back_1'):
+        main_menu(user_id=user_id, chat_id=chat_id, command='start')
+    elif call.data.endswith('back_2'):
+        main_menu(user_id=user_id, chat_id=chat_id, command='history')
+    elif call.data.endswith('go_search'):
+        bot.send_message(chat_id, 'тук тук ')
+        db.prepare_history_for_search(user_id=user_id)
+        end_conversation(user_id, chat_id)
+    else:
+        db.get_settings(user_id=user_id, key='history_id', remove_kebab=True)
+        lang = db.get_settings(call.from_user.id, key='language')
+        history = db.get_history_from_db(user_id=call.from_user.id)
+        search_record = ()
+        for i_rec in range(len(history)):
+            if int(history[i_rec][0]) == int(call.data[7:]):
+                search_record = history[i_rec]
+                db.set_settings(user_id=user_id, key='history_id', value=int(call.data[7:]))
+        logger.info(f'search_rec is {search_record}')
+        message = menu.history_reply(search_record, lang)
+        history_menu = types.InlineKeyboardMarkup()
+        history_menu.add(types.InlineKeyboardButton(text='Search again', callback_data='history_go_search'))
+        history_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_2'))
+
+        bot.send_message(
+            chat_id,
+            text=interface['elements']['more_info'][lang]+message,
+            reply_markup=history_menu)
+
+
+
+    # if len(history)<1:
+    #
+    # history_answer_menu = types.InlineKeyboardMarkup()
+    # history_answer_menu.add(types.InlineKeyboardButton(text='бахнуть поиск', callback_data='history_find_'))
+    # history_answer_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
 
 
 def choose_city(message: types.Message) -> None:
@@ -628,7 +664,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     elif 'bad_request' in hotels:
         bot.send_message(chat_id, interface['errors']['bad_request'][lang])
     else:
-        db.set_history(user_id)
+        #
         bot.send_message(
             chat_id,
             interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys()))
@@ -642,9 +678,17 @@ def end_conversation(user_id: str, chat_id: int) -> None:
                 media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
                 bot.send_media_group(chat_id, media=media_group)
                 bot.send_message(chat_id, message, parse_mode='HTML')
-    sleep(10)
+    bot.send_message(chat_id=chat_id, text=interface['questions']['save'][lang], reply_markup=kb.history_keyboard)
 
-    main_menu(user_id=user_id, chat_id=chat_id, command='another_one')
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('save'))
+def saving_buttons_catcher(call):
+    logger.info(f'function {saving_buttons_catcher.__name__} was called')
+    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    if call.data.endswith('yes'):
+        db.set_history(call.from_user.id)
+    main_menu(user_id=call.from_user.id, chat_id=call.message.chat.id, command='another_one')
+
 
 
 try:

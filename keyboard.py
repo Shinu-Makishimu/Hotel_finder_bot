@@ -38,6 +38,12 @@ photo_keyboard.add(
     telebot.types.InlineKeyboardButton(text='YES', callback_data='photo_yes'),
 )
 
+history_keyboard = telebot.types.InlineKeyboardMarkup()
+history_keyboard.add(
+    telebot.types.InlineKeyboardButton(text='NO', callback_data='save_no'),
+    telebot.types.InlineKeyboardButton(text='YES', callback_data='save_yes'),
+)
+
 help_keyboard = telebot.types.InlineKeyboardMarkup()
 help_keyboard.add(
     telebot.types.InlineKeyboardButton(text='/lowprice', callback_data='help_low'),

@@ -101,6 +101,10 @@ interface = {
             'date2': {
                 'ru_RU': 'Выберите дату выезда',
                 'en_US': "Select check-out date"
+            },
+            'save': {
+                'ru_RU': 'Сохранить поиск в истории?',
+                'en_US': "Wanna save?"
             }
         },
     'buttons':
@@ -313,6 +317,34 @@ interface = {
             'client_rating': {
                 'ru_RU': 'Стоимость',
                 'en_US': 'Price'
+            },
+            'date_search': {
+                'ru_RU': 'Дата поиска',
+                'en_US': ''
+            },
+            'hotels_in_res': {
+                'ru_RU': 'Количество отелей в выдаче',
+                'en_US': ''
+            },
+            'photos_in_res': {
+                'ru_RU': 'Количество отелей в выдаче',
+                'en_US': ''
+            },
+            'radius': {
+                'ru_RU': 'Радиус поиска',
+                'en_US': ''
+            },
+            'price_min': {
+                'ru_RU': 'Минимальная цена',
+                'en_US': ''
+            },
+            'price_max': {
+                'ru_RU': 'Максимальная цена',
+                'en_US': ''
+            },
+            'more_info':{
+                'ru_RU': 'Подробности запроса',
+                'en_US': ''
             },
         }
 }

@@ -1,5 +1,6 @@
-from language import interface
 from loguru import logger
+from language import interface
+from accessory import get_date
 
 
 def start_reply(first_name: str, last_name: str, status: str, language: str) -> str:
@@ -47,3 +48,28 @@ def price_reply(language:str, currency: str) -> str:
     )
     return reply
 
+def history_reply(record: tuple, lang:str)-> str:
+    search_type = record[2]
+    search_date = get_date(int(record[5]))
+    city = record[4]
+    currency = record[13]
+    hotel_count= record[6]
+    photo_count = record[7]
+    check_in = get_date(int(record[11]))
+    check_out= get_date(int(record[12]))
+    message = f"\n{interface['elements']['date_search'][lang]}: {search_date}\n" \
+              f"{interface['responses']['current_currency'][lang]}: {currency}\n" \
+              f"{interface['elements']['city'][lang]}: {city}\n" \
+              f"{interface['elements']['hotels_in_res'][lang]}: {hotel_count}\n" \
+              f"{interface['elements']['photos_in_res'][lang]}: {photo_count}\n" \
+              f"{interface['responses']['check_in'][lang]}: {check_in}\n" \
+              f"{interface['responses']['check_out'][lang]}: {check_out}\n"
+    if search_type == 'bestdeal':
+        r = record[8]
+        min_price= record[9]
+        max_price= record [10]
+        message +=f"{interface['elements']['radius'][lang]}: {r}\n" \
+        f"{interface['elements']['price_min'][lang]}: {min_price}\n" \
+        f"{interface['elements']['price_max'][lang]}: {max_price}\n" \
+
+    return message
