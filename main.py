@@ -3,17 +3,16 @@ from time import sleep
 from loguru import logger
 from datetime import datetime
 from telebot import TeleBot, types
+from telegram_bot_calendar import DetailedTelegramCalendar as DTC
 
-
-import database as db
 import keyboard
 import keyboard as kb
+import database as db
 import settings as sett
 from language import interface
 
 from accessory import get_timestamp, check_dates
-from bot_requests import hotels_finder, locations,menu
-from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+from bot_requests import hotels_finder, locations, menu
 
 bot = TeleBot(sett.API_TOKEN)
 logger.configure(**sett.logger_config)
@@ -21,19 +20,6 @@ logger.info("\n" + "\\" * 50 + 'new session started' + "//" * 50 + "\n")
 
 if not path.isfile(sett.NAME_DATABASE):
     db.create_bd_if_not_exist()
-
-# памятка по отслеживанию пользователя
-
-# Шаблон для работы с пользователем:
-# поймать ответ, фильтр тип ответа. ключ, начинается с...
-# проверить пользователя на существование и/или проверить положение пользователя (status)
-# занести в базу положение пользователя в меню
-# показать пользователю что либо
-# chat_id = message.chat.id
-# chat_id = call.message.chat.id # id чата
-# user_id = call.from_user.id
-# user_id = message.from_user.id # id юзера
-# TODO: сделать обработчик "левой" команды
 
 
 @bot.message_handler(commands=['start', 'lowprice', 'highprice', 'bestdeal', 'settings', 'help'])
@@ -62,8 +48,6 @@ def commands_catcher(message: types.Message) -> None:
         )
     elif message.text == sett.commands_list[5]:
         logger.info(f'"help" command is called')
-        # msg = bot.send_message(chat_id=message.chat.id,text='loading')
-        # bot.register_next_step_handler(bot.send_message(chat_id=message.chat.id,text='loading'), help_menu)
         help_menu(message)
 
 
@@ -73,7 +57,7 @@ def help_menu(message: types.Message):
     help_kb = keyboard.help_keyboard
     bot.send_message(
         chat_id=message.chat.id,
-        text= interface['responses']['help'][db.get_settings(user_id=message.from_user.id, key='language')],
+        text=interface['responses']['help'][db.get_settings(user_id=message.from_user.id, key='language')],
         reply_markup=help_kb,
         parse_mode='HTML')
 
@@ -81,16 +65,28 @@ def help_menu(message: types.Message):
 @bot.callback_query_handler(func=lambda call: call.data.startswith('help'))
 def buttons_catcher_help(call: types.CallbackQuery) -> None:
     logger.info(f'Function {buttons_catcher_help.__name__} was called with {call.data}')
-    lang=db.get_settings(user_id=call.from_user.id, key='language')
+    lang = db.get_settings(user_id=call.from_user.id, key='language')
     bot.answer_callback_query(call.id)
     if call.data.endswith('low'):
-        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_l'][lang])
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=interface['responses']['help_l'][lang]
+        )
     elif call.data.endswith('high'):
-        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_h'][lang])
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=interface['responses']['help_h'][lang]
+        )
     elif call.data.endswith('sett'):
-        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_s'][lang])
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=interface['responses']['help_s'][lang]
+        )
     elif call.data.endswith('best'):
-        bot.send_message(chat_id=call.message.chat.id, text=interface['responses']['help_b'][lang])
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=interface['responses']['help_b'][lang]
+        )
     else:
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         main_menu(
@@ -98,8 +94,6 @@ def buttons_catcher_help(call: types.CallbackQuery) -> None:
             command='start',
             chat_id=call.message.chat.id
         )
-
-
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('main'))
@@ -130,11 +124,20 @@ def buttons_catcher_settings(call: types.CallbackQuery) -> None:
                 f'user_id{call.from_user.id} and data: {call.data}')
     logger.info(f'Function settings menu called')
     bot.answer_callback_query(call.id)
+    lang = db.get_settings(user_id=call.from_user.id, key='language')
 
     if call.data == 'set_money':
-        bot.send_message(call.message.chat.id, 'your answer ', reply_markup=kb.money_keyboard)
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=interface['responses']['ask_to_select'][lang],
+            reply_markup=kb.money_keyboard
+        )
     elif call.data == 'set_language':
-        bot.send_message(call.message.chat.id, 'your answer ', reply_markup=kb.language_keyboard)
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=interface['responses']['ask_to_select'][lang],
+            reply_markup=kb.language_keyboard
+        )
     elif call.data == 'set_back':
         db.set_navigate(user_id=call.from_user.id, value='main')
         main_menu(
@@ -211,7 +214,11 @@ def buttons_catcher_language(call: types.CallbackQuery) -> None:
             chat_id=call.message.chat.id
         )
     else:
-        db.set_settings(user_id=call.from_user.id, key='language', value=call.data[9:])
+        db.set_settings(
+            user_id=call.from_user.id,
+            key='language',
+            value=call.data[9:]
+        )
 
     reply = interface['responses']['saved'][call.data[9:]]
     bot.send_message(call.message.chat.id, reply)
@@ -244,7 +251,11 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
                 status=db.get_navigate(user_id),
                 language=lang
             )
-        bot.send_message(chat_id, reply, reply_markup=kb.main_menu_keyboard)
+        bot.send_message(
+            chat_id=chat_id,
+            text=reply,
+            reply_markup=kb.main_menu_keyboard
+        )
     elif command == 'settings':
         db.set_settings(user_id=user_id, key='status', value='old')
         db.check_user_in_redis(user_id)
@@ -257,36 +268,46 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
         )
         bot.send_message(chat_id, reply, reply_markup=kb.settings_keyboard)
     elif command == 'history':
-
         status = db.get_settings(user_id, key='status')
         if status == 'new':
-            msg = bot.send_message(chat_id=chat_id, text=' ')
-            bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id,
-                                  text=interface['errors']['no_history'][lang])
+            msg = bot.send_message(chat_id=chat_id, text='no_history')
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=msg.message_id,
+                text=interface['errors']['no_history'][lang]
+            )
             sleep(3)
             bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
         else:
             search_list = db.get_history_from_db(user_id=user_id, short=True)
             history_menu = types.InlineKeyboardMarkup()
             for search_string in search_list:
-                history_menu.add(types.InlineKeyboardButton(
-                    text=search_string[2],
-                    callback_data='history' + str(search_string[0])
-                ))
+                history_menu.add(
+                    types.InlineKeyboardButton(
+                        text=search_string[2],
+                        callback_data='history' + str(search_string[0])
+                    )
+                )
             history_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
-            bot.send_message(chat_id=chat_id, text="список запросов", reply_markup=history_menu)
+            bot.send_message(
+                chat_id=chat_id,
+                text="список запросов",
+                reply_markup=history_menu
+            )
 
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
         db.set_settings(user_id=user_id, key='command', value=command)
-
         bot.register_next_step_handler(
-            bot.send_message(chat_id, interface['questions']['city'][lang]), choose_city)
+            bot.send_message(
+                chat_id=chat_id,
+                text=interface['questions']['city'][lang]),
+            choose_city
+        )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('history'))
 def history_button_catcher(call):
-
     logger.info(f'Function {history_button_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
 
@@ -299,7 +320,6 @@ def history_button_catcher(call):
     elif call.data.endswith('back_2'):
         main_menu(user_id=user_id, chat_id=chat_id, command='history')
     elif call.data.endswith('go_search'):
-        bot.send_message(chat_id, 'тук тук ')
         db.prepare_history_for_search(user_id=user_id)
         end_conversation(user_id, chat_id)
     else:
@@ -319,16 +339,8 @@ def history_button_catcher(call):
 
         bot.send_message(
             chat_id,
-            text=interface['elements']['more_info'][lang]+message,
+            text=interface['elements']['more_info'][lang] + message,
             reply_markup=history_menu)
-
-
-
-    # if len(history)<1:
-    #
-    # history_answer_menu = types.InlineKeyboardMarkup()
-    # history_answer_menu.add(types.InlineKeyboardButton(text='бахнуть поиск', callback_data='history_find_'))
-    # history_answer_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
 
 
 def choose_city(message: types.Message) -> None:
@@ -487,23 +499,22 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
                 f' date_1 = {date_1} date_2 = {date_2} language {language}')
 
     if date_1 == 0 or date_1 is None:
-
         reply = interface['questions']['date1'][language]
-        calendar, step = DetailedTelegramCalendar(calendar_id=1, locale=language[:2]).build()
+        calendar, step = DTC(calendar_id=1, locale=language[:2]).build()
         try:
             # это очень нужно!
-            bot.send_message(message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
+            bot.send_message(message.chat.id, f"{reply}", reply_markup=calendar)
         except Exception as e:
             logger.info(f'Поймана ошибка {e}')
-            bot.send_message(message.message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
+            bot.send_message(message.message.chat.id, f"{reply}", reply_markup=calendar)
     else:
 
         reply = interface['questions']['date2'][language]
-        calendar, step = DetailedTelegramCalendar(calendar_id=2, locale=language[:2]).build()
-        bot.send_message(message.message.chat.id, f"{reply} {LSTEP[step]}", reply_markup=calendar)
+        calendar, step = DTC(calendar_id=2, locale=language[:2]).build()
+        bot.send_message(message.message.chat.id, f"{reply}", reply_markup=calendar)
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
+@bot.callback_query_handler(func=DTC.func(calendar_id=1))
 def callback_calendar_1(call: types.CallbackQuery) -> None:
     """
     функция обрабатывающая календарь чек ин
@@ -513,7 +524,7 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
     # {LSTEP[step]}
     logger.info(f'Function {callback_calendar_1.__name__} called ')
     # result= key= step = ''
-    result, key, step = DetailedTelegramCalendar(calendar_id=1).process(call.data)
+    result, key, step = DTC(calendar_id=1).process(call.data)
     lang = db.get_settings(user_id=call.from_user.id, key='language')
 
     if not result and key:
@@ -545,7 +556,7 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
             choose_date(call)
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
+@bot.callback_query_handler(func=DTC.func(calendar_id=2))
 def callback_calendar_2(call: types.CallbackQuery) -> None:
     """
     Фнкция обрабатывающая календарь чекаута
@@ -554,7 +565,7 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
     """
     logger.info(f'Function {callback_calendar_2.__name__} called')
     language = db.get_settings(user_id=call.from_user.id, key='language')
-    result, key, step = DetailedTelegramCalendar(calendar_id=2).process(call.data)
+    result, key, step = DTC(calendar_id=2).process(call.data)
 
     if not result and key:
         bot.edit_message_text(
@@ -688,7 +699,6 @@ def saving_buttons_catcher(call):
     if call.data.endswith('yes'):
         db.set_history(call.from_user.id)
     main_menu(user_id=call.from_user.id, chat_id=call.message.chat.id, command='another_one')
-
 
 
 try:

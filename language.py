@@ -140,6 +140,10 @@ interface = {
             'no_city': {
                 'ru_RU': 'Искомого города нет в списке!',
                 'en_US': 'The city i,m looking for is not in the list!'
+            },
+            'no_history': {
+                'ru_RU': 'У вас нет истории!',
+                'en_US': "You haven't history records!"
             }
 
         },
@@ -320,31 +324,31 @@ interface = {
             },
             'date_search': {
                 'ru_RU': 'Дата поиска',
-                'en_US': ''
+                'en_US': 'Search date'
             },
             'hotels_in_res': {
                 'ru_RU': 'Количество отелей в выдаче',
-                'en_US': ''
+                'en_US': 'Number of hotels as a result'
             },
             'photos_in_res': {
-                'ru_RU': 'Количество отелей в выдаче',
-                'en_US': ''
+                'ru_RU': 'Количество фотографий для каждого отеля',
+                'en_US': 'Number of photos for each hotel'
             },
             'radius': {
                 'ru_RU': 'Радиус поиска',
-                'en_US': ''
+                'en_US': 'Search radius'
             },
             'price_min': {
                 'ru_RU': 'Минимальная цена',
-                'en_US': ''
+                'en_US': 'Minimum price'
             },
             'price_max': {
                 'ru_RU': 'Максимальная цена',
-                'en_US': ''
+                'en_US': 'Maximum price'
             },
             'more_info':{
                 'ru_RU': 'Подробности запроса',
-                'en_US': ''
+                'en_US': 'Search details'
             },
         }
 }
