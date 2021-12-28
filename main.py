@@ -44,7 +44,8 @@ def commands_catcher(message: types.Message) -> None:
         main_menu(
             user_id=str(message.from_user.id),
             command=message.text.strip('/'),
-            chat_id=message.chat.id
+            chat_id=message.chat.id,
+            message_id=message.message_id
         )
     elif message.text == sett.commands_list[5]:
         logger.info(f'"help" command is called')
@@ -229,7 +230,7 @@ def buttons_catcher_language(call: types.CallbackQuery) -> None:
     )
 
 
-def main_menu(user_id: str, command: str, chat_id: int) -> None:
+def main_menu(user_id: str, command: str, chat_id: int, message_id=None) -> None:
     """
     функция формирующая главное меню, меню настроек и вызывает функции соответствующие нажатым кнопкам
     :param user_id: пользовательский id
@@ -294,7 +295,6 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
                 text="список запросов",
                 reply_markup=history_menu
             )
-
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
         db.set_settings(user_id=user_id, key='command', value=command)
@@ -304,6 +304,7 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
                 text=interface['questions']['city'][lang]),
             choose_city
         )
+
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('history'))
@@ -351,7 +352,6 @@ def choose_city(message: types.Message) -> None:
     """
     logger.info(f'function {choose_city.__name__} was called')
     language = db.get_settings(user_id=message.from_user.id, key='language')
-
     if message.text.strip().replace(' ', '').replace('-', '').isalpha():
 
         loc = locations.make_locations_list(message)
