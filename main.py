@@ -5,13 +5,13 @@ from telebot import TeleBot, types
 from datetime import datetime, date
 from telegram_bot_calendar import DetailedTelegramCalendar as DTC
 
-import keyboard
+import accessory
 import keyboard as kb
 import database as db
 import settings as sett
 from language import interface
 
-from accessory import get_timestamp, check_dates
+
 from bot_requests import hotels_finder, locations, menu
 
 
@@ -308,7 +308,7 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
             choose_city
         )
     elif command == 'help':
-        help_kb = keyboard.help_keyboard
+        help_kb = kb.help_keyboard
         bot.send_message(
             chat_id=chat_id,
             text=interface['responses']['help'][db.get_settings(user_id=user_id, key='language')],
@@ -514,7 +514,7 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
     logger.info(f'Function {choose_date.__name__} called with args:'
                 f' date_1 = {date_1} date_2 = {date_2} language {language}')
 
-    if date_1 == 0 or date_1 is None:
+    if date_1 == '0' or date_1 is None:
         reply = interface['questions']['date1'][language]
         calendar, step = DTC(calendar_id=1, locale=language[:2], min_date=date.today()).build()
         try:
@@ -524,9 +524,9 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
             logger.info(f'Поймана ошибка {e}')
             bot.send_message(message.message.chat.id, f"{reply}", reply_markup=calendar)
     else:
-
+        min_date = datetime.fromtimestamp(float(date_1)).date()
         reply = interface['questions']['date2'][language]
-        calendar, step = DTC(calendar_id=2, locale=language[:2]).build()
+        calendar, step = DTC(calendar_id=2, locale=language[:2], min_date=min_date).build()
         bot.send_message(message.message.chat.id, f"{reply}", reply_markup=calendar)
 
 
@@ -566,9 +566,9 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
                 call.message.chat.id,
                 call.message.message_id
             )
-            result = get_timestamp(result)
+            result = accessory.get_timestamp(result)
             db.set_settings(user_id=call.from_user.id, key='date1', value=result)
-            db.set_settings(user_id=call.from_user.id, key='date2', value=0)
+            db.set_settings(user_id=call.from_user.id, key='date2', value="0")
             choose_date(call)
 
 
@@ -591,16 +591,16 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
             reply_markup=key
         )
     elif result:
-        if check_dates(
+        if accessory.check_dates(
                 check_in=int(db.get_settings(user_id=call.from_user.id, key='date1')),
-                check_out=get_timestamp(result)):
+                check_out=accessory.get_timestamp(result)):
 
             bot.edit_message_text(
                 interface['responses']['check_out'][language] + '\n' + str(result),
                 call.message.chat.id,
                 call.message.message_id
             )
-            result = get_timestamp(result)
+            result = accessory.get_timestamp(result)
             db.set_settings(user_id=call.from_user.id, key='date2', value=result)
 
             if db.get_settings(user_id=call.from_user.id, key='command') not in ['lowprice', 'highprice']:
