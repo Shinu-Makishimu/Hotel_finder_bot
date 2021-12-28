@@ -10,18 +10,7 @@ import keyboard as kb
 import database as db
 import settings as sett
 from language import interface
-
-
 from bot_requests import hotels_finder, locations, menu
-
-
-class MyStyleCalendar(DTC):
-    prev_button = "⬅️"
-    next_button = "➡️"
-    empty_month_button = ""
-    empty_year_button = ""
-
-
 
 
 bot = TeleBot(sett.API_TOKEN)
