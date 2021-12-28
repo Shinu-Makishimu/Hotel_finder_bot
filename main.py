@@ -1,8 +1,8 @@
 from os import path
 from time import sleep
 from loguru import logger
-from datetime import datetime
 from telebot import TeleBot, types
+from datetime import datetime, date
 from telegram_bot_calendar import DetailedTelegramCalendar as DTC
 
 import keyboard
@@ -13,6 +13,16 @@ from language import interface
 
 from accessory import get_timestamp, check_dates
 from bot_requests import hotels_finder, locations, menu
+
+
+class MyStyleCalendar(DTC):
+    prev_button = "⬅️"
+    next_button = "➡️"
+    empty_month_button = ""
+    empty_year_button = ""
+
+
+
 
 bot = TeleBot(sett.API_TOKEN)
 logger.configure(**sett.logger_config)
@@ -506,7 +516,7 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
 
     if date_1 == 0 or date_1 is None:
         reply = interface['questions']['date1'][language]
-        calendar, step = DTC(calendar_id=1, locale=language[:2]).build()
+        calendar, step = DTC(calendar_id=1, locale=language[:2], min_date=date.today()).build()
         try:
             # это очень нужно!
             bot.send_message(message.chat.id, f"{reply}", reply_markup=calendar)
@@ -692,7 +702,6 @@ def end_conversation(user_id: str, chat_id: int) -> None:
     elif 'bad_request' in hotels:
         bot.send_message(chat_id, interface['errors']['bad_request'][lang])
     else:
-        #
         bot.send_message(
             chat_id,
             interface['responses']['hotels_found'][lang] + ' ' + str(len(hotels.keys()))

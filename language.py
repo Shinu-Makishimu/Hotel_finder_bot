@@ -67,7 +67,7 @@ interface = {
                 'en_US': 'In which city to look for hotels?'
             },
             'price': {
-                'ru_RU': 'Введите минимальную и максимальную цену через пробел',
+                'ru_RU': 'Введите минимальную и максимальную цену проживания через пробел',
                 'en_US': 'Enter the minimum and maximum price separated by a space.'
             },
             'radius': {

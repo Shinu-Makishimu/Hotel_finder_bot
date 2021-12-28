@@ -31,6 +31,7 @@ def get_hotels(user_id: str) -> dict:
     data = request_hotels(p=params)
     if 'bad_req' in data:
         return {'bad_request': 'bad_request'}
+
     data = structure_hotels_info(user_id=user_id, data=data)
 
     if not data or len(data['results']) < 1:
@@ -108,7 +109,7 @@ def request_hotels(p, page=1):
         return {'bad_req': 'bad_req'}
 
 
-def structure_hotels_info(user_id, data) -> dict:
+def structure_hotels_info(user_id, data) -> dict or None:
     """
     Структурирование результатов поиск для удобной обработки в дальнейшем
     :param user_id:
@@ -119,7 +120,11 @@ def structure_hotels_info(user_id, data) -> dict:
     data = data.get('data', {}).get('body', {}).get('searchResults')
 
     hotels = dict()
-    hotels['total_count'] = data.get('totalCount', 0)
+    try:
+        hotels['total_count'] = data.get('totalCount', 0)
+    except AttributeError as err:
+        logger.error(f'Function {structure_hotels_info.__name__} was crushed with {err}')
+        return None
 
     logger.info(f"Next page: {data.get('pagination', {}).get('nextPageNumber', 0)}")
 
