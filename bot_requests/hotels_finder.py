@@ -104,8 +104,8 @@ def request_hotels(p, page=1):
         "destinationId": p['city'],
         "pageNumber": str(page),
         "pageSize": p['hotel_count'],
-        "checkIn": get_date(p['date1']),
-        "checkOut": get_date(p['date2']),
+        "checkIn": get_date(int(p['date1'])),
+        "checkOut": get_date(int(p['date2'])),
         "adults1": "1",
         "sortOrder": order[p['command']],
         "locale": p['language'],
@@ -161,7 +161,7 @@ def structure_hotels_info(user_id, data) -> dict:
             hotel['name'] = i_hotel.get('name')
             hotel['id'] = i_hotel.get('id')
             hotel['star_rating'] = i_hotel.get('starRating', 0)
-            hotel['price'] = hotel_price(i_hotel, lang)
+            hotel['price'] = hotel_price(i_hotel, lang, user_id)
             if not hotel['price']:
                 continue
             hotel['distance'] = i_hotel.get(
@@ -219,7 +219,7 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
         rating_hotel = interface['elements']['rating'][lang],
         rat_h = hot_rat,
         pri_hot = interface['elements']['price'][lang],
-        price = str(hotel['price']) + currency,
+        price = str(hotel['price']) + ' ' + currency,
         dis_h = interface['elements']['distance'][lang],
         dist = hotel.get('distance'),
         addr_h = interface['elements']['address'][lang],
@@ -272,14 +272,18 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
     return hotels_info
 
 
-def hotel_price(hotel, lang) -> int:
+def hotel_price(hotel, lang, user_id) -> int:
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
+    check_in = int(get_settings(user_id=user_id, key='date1'))
+    check_out = int(get_settings(user_id=user_id, key='date2'))
+    days_number = days_count(check_in=check_in, check_out=check_out)
     try:
         if hotel.get('ratePlan').get('price').get('exactCurrent'):
-            price = hotel.get('ratePlan').get('price').get('exactCurrent')
+            temp_price = hotel.get('ratePlan').get('price').get('exactCurrent')
         else:
-            price = hotel.get('ratePlan').get('price').get('current')
-            price = int(re.sub(r'[^0-9]', '', price))
+            temp_price = hotel.get('ratePlan').get('price').get('current')
+            temp_price = int(re.sub(r'[^0-9]', '', temp_price))
+        price = round(days_number * temp_price, 2)
     except Exception as error:
         logger.warning(f'price crushed with {error}')
         price = interface['errors']['no_information'][lang]
@@ -308,3 +312,12 @@ def google_maps_link(coordinates: dict, lang: str) -> str:
     link = f"http://www.google.com/maps/place/{coordinates['lat']},{coordinates['lon']}"
     r = f'<a href="{link}">{text}</a>'
     return r
+
+
+def days_count(check_in: int, check_out: int):
+    logger.info(f'Function {days_count.__name__} was called with { check_in} {check_out}')
+    date_in = get_date(tmstmp=check_in, days=True)
+    date_out = get_date(tmstmp=check_out, days=True)
+    date_result = abs((date_out-date_in).days)
+    logger.info(f'Function {days_count.__name__} make some math: { date_out} minus {date_in} = {date_result}')
+    return date_result

@@ -13,7 +13,8 @@ main_menu_keyboard.add(
     telebot.types.InlineKeyboardButton(text='Best deal', callback_data='main_bestdeal'),
     telebot.types.InlineKeyboardButton(text='High price', callback_data='main_highprice'),
     telebot.types.InlineKeyboardButton(text='My history', callback_data='main_history'),
-    telebot.types.InlineKeyboardButton(text='Settings', callback_data='main_settings')
+    telebot.types.InlineKeyboardButton(text='Settings', callback_data='main_settings'),
+    telebot.types.InlineKeyboardButton(text='Help', callback_data='main_help')
 )
 
 money_keyboard = telebot.types.InlineKeyboardMarkup()

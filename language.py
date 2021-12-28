@@ -279,7 +279,23 @@ interface = {
                          'или выбрать предпочтительную валюту',
                 'en_US': "shows the settings menu, where you can choose your search language or "
                          "choose your preferred currency"
-            }
+            },
+            'lowprice': {
+                'ru_RU': '\nВы выбрали поиск самых недорогих отелей. \n'
+                         'твечайте на вопросы бота и он выдаст вам результат\n',
+                'en_US': 'Search parameters'
+            },
+            'bestdeal': {
+                'ru_RU': '\nВы выбрали поиск лучших отелей по цене и расположению! \n'
+                         'Отвечайте на вопросы бота и он выдаст вам результат\n',
+                'en_US': 'Search parameters'
+            },
+            'highprice': {
+                'ru_RU': '\nВы выбрали поиск самых лухари отелей! \n'
+                         'Отвечайте на вопросы бота и он выдаст вам результат\n',
+                'en_US': 'Search parameters'
+            },
+
 
 
         },

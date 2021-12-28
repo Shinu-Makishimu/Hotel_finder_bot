@@ -301,7 +301,10 @@ def create_user_in_redis(user_id: str, language: str, first_name: str, last_name
     """
     logger.info(f'Function {create_user_in_redis.__name__} called with args: '
                 f'user_id{user_id}, language {language}, first name {first_name}, last name {last_name}')
-
+    if first_name is None:
+        first_name = ' '
+    if last_name is None:
+        last_name = ' '
     if language not in language_dict.keys():
         language = 'en'
     if not check_user_in_db(user_id=user_id):
@@ -333,6 +336,7 @@ def set_settings(user_id: str or int, key: str, value: Any) -> None:
 def get_settings(user_id: str or int, key: object = False, remove_kebab: object = False) -> str:
     """
     Функция получение настройки по ключу key
+    :param remove_kebab:
     :param user_id:
     :param key:
     :return:
@@ -380,7 +384,6 @@ def get_navigate(user_id: Any) -> str:
 def set_history(user_id: str) -> None:
     """
     :param user_id:
-    :param result:
     :return:
     """
     logger.info(f'Function {set_history.__name__} called with argument: '
@@ -413,7 +416,7 @@ def get_history(user_id: str, short=False) -> list[str]:
     return db_result
 
 
-def clean_settings(user_id:str) ->None:
+def clean_settings(user_id: str) -> None:
     logger.info(f'Function {clean_settings.__name__} was called with arg user_id{user_id}')
     for element in USL:
         redis_db.hdel(user_id, element)
@@ -443,7 +446,7 @@ def prepare_history_for_search(user_id: str) -> None:
         if int(history_record[i_rec][0]) == int(record_id):
             record = history_record[i_rec]
 
-    set_settings(user_id , 'city', record[3])
+    set_settings(user_id, 'city', record[3])
     set_settings(user_id, 'hotel_count', record[6])
     set_settings(user_id, 'photo_count', record[7])
     set_settings(user_id, 'date1', record[11])
@@ -453,7 +456,6 @@ def prepare_history_for_search(user_id: str) -> None:
     set_settings(user_id, 'city_name', record[4])
 
     if record[2] == 'bestdeal':
-        set_settings(user_id, 'max_price', record [10])
+        set_settings(user_id, 'max_price', record[10])
         set_settings(user_id, 'min_price', record[9])
         set_settings(user_id, 'distance',  record[8])
-

@@ -45,22 +45,21 @@ def commands_catcher(message: types.Message) -> None:
             user_id=str(message.from_user.id),
             command=message.text.strip('/'),
             chat_id=message.chat.id,
-            message_id=message.message_id
         )
-    elif message.text == sett.commands_list[5]:
-        logger.info(f'"help" command is called')
-        help_menu(message)
+    # elif message.text == sett.commands_list[5]:
+    #     logger.info(f'"help" command is called')
+    #     help_menu(message)
 
 
-def help_menu(message: types.Message):
-    logger.info(f'Function {help_menu.__name__} called '
-                f'and use argument: {message.text}')
-    help_kb = keyboard.help_keyboard
-    bot.send_message(
-        chat_id=message.chat.id,
-        text=interface['responses']['help'][db.get_settings(user_id=message.from_user.id, key='language')],
-        reply_markup=help_kb,
-        parse_mode='HTML')
+# def help_menu(message: types.Message):
+#     logger.info(f'Function {help_menu.__name__} called '
+#                 f'and use argument: {message.text}')
+#     help_kb = keyboard.help_keyboard
+#     bot.send_message(
+#         chat_id=message.chat.id,
+#         text=interface['responses']['help'][db.get_settings(user_id=message.from_user.id, key='language')],
+#         reply_markup=help_kb,
+#         parse_mode='HTML')
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('help'))
@@ -230,7 +229,7 @@ def buttons_catcher_language(call: types.CallbackQuery) -> None:
     )
 
 
-def main_menu(user_id: str, command: str, chat_id: int, message_id=None) -> None:
+def main_menu(user_id: str, command: str, chat_id: int) -> None:
     """
     функция формирующая главное меню, меню настроек и вызывает функции соответствующие нажатым кнопкам
     :param user_id: пользовательский id
@@ -298,12 +297,25 @@ def main_menu(user_id: str, command: str, chat_id: int, message_id=None) -> None
     elif command in ['lowprice', 'highprice', "bestdeal"]:
         db.set_settings(user_id=user_id, key='status', value='old')
         db.set_settings(user_id=user_id, key='command', value=command)
+        bot.send_message(
+            chat_id=chat_id,
+            text=interface['responses'][command][lang]
+        )
         bot.register_next_step_handler(
             bot.send_message(
                 chat_id=chat_id,
                 text=interface['questions']['city'][lang]),
             choose_city
         )
+    elif command == 'help':
+        help_kb = keyboard.help_keyboard
+        bot.send_message(
+            chat_id=chat_id,
+            text=interface['responses']['help'][db.get_settings(user_id=user_id, key='language')],
+            reply_markup=help_kb,
+            parse_mode='HTML')
+    else:
+        bot.send_message(chat_id=chat_id, text=interface['errors']['input'][lang])
 
 
 
@@ -684,7 +696,7 @@ def end_conversation(user_id: str, chat_id: int) -> None:
             list_of_urls = hotel_info['photo']
             message = hotel_info['message']
             if len(list_of_urls) < 1:
-                bot.send_message(chat_id, message)
+                bot.send_message(chat_id, message, parse_mode='HTML')
             else:
                 media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
                 bot.send_media_group(chat_id, media=media_group)

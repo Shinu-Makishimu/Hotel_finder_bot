@@ -17,20 +17,24 @@ def get_timestamp(date: datetime)-> int:
     return result
 
 
-def get_date(tmstmp: Any)-> datetime:
+def get_date(tmstmp: int, days: bool = False) -> datetime:
     """
     конвертация формата таймстамп в дату
+    :param days:
     :param tmstmp:
     :return:
     """
+
     logger.info(f'Function {get_date.__name__} called with argument: {tmstmp}')
     try:
-        if type(tmstmp) is not int:
-            tmstmp = int(tmstmp)
-        result = datetime.datetime.fromtimestamp(tmstmp).date().strftime("%Y-%m-%d")
+        if days:
+            result = datetime.datetime.fromtimestamp(tmstmp)
+        else:
+            result = datetime.datetime.fromtimestamp(tmstmp).date().strftime("%Y-%m-%d")
+        logger.info(f'Function {get_date.__name__} create result: {result}')
     except Exception as error:
         logger.error(f'function crushed with {error}')
-    logger.info(f'Function {get_date.__name__} create result: {result}')
+
     return result
 
 
