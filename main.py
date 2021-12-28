@@ -25,10 +25,9 @@ if not path.isfile(sett.NAME_DATABASE):
 @bot.message_handler(commands=['start', 'lowprice', 'highprice', 'bestdeal', 'settings', 'help'])
 def commands_catcher(message: types.Message) -> None:
     """
-    Функция ловит введённые команды пользователем
-    разделения по командам пока нет
-    :param message:
-    :return:
+    Функция ловит введённые команды пользователя и перенапраяляет в main menu
+    :param message: сообщение
+    :return: None
     """
     logger.info(f'Function {commands_catcher.__name__} called '
                 f'and use argument: {message.text}')
@@ -46,24 +45,15 @@ def commands_catcher(message: types.Message) -> None:
             command=message.text.strip('/'),
             chat_id=message.chat.id,
         )
-    # elif message.text == sett.commands_list[5]:
-    #     logger.info(f'"help" command is called')
-    #     help_menu(message)
-
-
-# def help_menu(message: types.Message):
-#     logger.info(f'Function {help_menu.__name__} called '
-#                 f'and use argument: {message.text}')
-#     help_kb = keyboard.help_keyboard
-#     bot.send_message(
-#         chat_id=message.chat.id,
-#         text=interface['responses']['help'][db.get_settings(user_id=message.from_user.id, key='language')],
-#         reply_markup=help_kb,
-#         parse_mode='HTML')
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('help'))
 def buttons_catcher_help(call: types.CallbackQuery) -> None:
+    """
+    Функция обрабатывает нажатие клавиш клавиатуры help
+    :param call: Callback
+    :return: None
+    """
     logger.info(f'Function {buttons_catcher_help.__name__} was called with {call.data}')
     lang = db.get_settings(user_id=call.from_user.id, key='language')
     bot.answer_callback_query(call.id)
@@ -100,8 +90,8 @@ def buttons_catcher_help(call: types.CallbackQuery) -> None:
 def buttons_catcher_main(call: types.CallbackQuery) -> None:
     """
     Функция обрабатывает нажатые кнопки инлайн клавиатуры главного меню
-    :param call:
-    :return:
+    :param call: Callback
+    :return: None
     """
     logger.info(f'Function {buttons_catcher_main.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
@@ -117,8 +107,8 @@ def buttons_catcher_main(call: types.CallbackQuery) -> None:
 def buttons_catcher_settings(call: types.CallbackQuery) -> None:
     """
     Функция обрабатывает нажатые кнопки инлайн клавиатуры меню настроек
-    :param call:
-    :return:
+    :param call: Callback
+    :return: None
     """
     logger.info(f'Function {buttons_catcher_settings.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
@@ -153,8 +143,8 @@ def buttons_catcher_settings(call: types.CallbackQuery) -> None:
 def buttons_catcher_money(call: types.CallbackQuery) -> None:
     """
     Функция обрабатывает нажатые кнопки инлайн клавиатуры меню смены денежной еденицы
-    :param call:
-    :return:
+    :param call: Callback
+    :return: None
     """
     logger.info(f'Function {buttons_catcher_money.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
@@ -200,8 +190,8 @@ def buttons_catcher_money(call: types.CallbackQuery) -> None:
 def buttons_catcher_language(call: types.CallbackQuery) -> None:
     """
     Функция обрабатывает нажатые кнопки инлайн клавиатуры смены языка интерфейса
-    :param call:
-    :return:
+    :param call: Callback
+    :return: None
     """
     logger.info(f'Function {buttons_catcher_language.__name__} called and use arg: '
                 f'user_id{call.from_user.id} and data: {call.data}')
@@ -235,7 +225,7 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
     :param user_id: пользовательский id
     :param command: команда, которую выбрал пользователь
     :param chat_id: id чата, в который отправлять сообщения
-    :return:
+    :return: None
     """
     logger.info(f'Function {main_menu.__name__} called '
                 f'and use argument: user_id {user_id} key {command} chat_id {chat_id}')
@@ -291,7 +281,7 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
             history_menu.add(types.InlineKeyboardButton(text='back', callback_data='history_back_1'))
             bot.send_message(
                 chat_id=chat_id,
-                text="список запросов",
+                text= interface['elements']['city_list'][lang],
                 reply_markup=history_menu
             )
     elif command in ['lowprice', 'highprice', "bestdeal"]:
@@ -318,14 +308,18 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
         bot.send_message(chat_id=chat_id, text=interface['errors']['input'][lang])
 
 
-
 @bot.callback_query_handler(func=lambda call: call.data.startswith('history'))
-def history_button_catcher(call):
+def history_button_catcher(call: types.CallbackQuery) -> None:
+    """
+    Функция обрабатывает нажатые кнопки меню истории
+    :param call: Callback
+    :return: None
+    """
     logger.info(f'Function {history_button_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
 
     bot.answer_callback_query(call.id)
-    user_id = call.from_user.id
+    user_id = str(call.from_user.id)
     chat_id = call.message.chat.id
     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
     if call.data.endswith('back_1'):
@@ -338,7 +332,7 @@ def history_button_catcher(call):
     else:
         db.get_settings(user_id=user_id, key='history_id', remove_kebab=True)
         lang = db.get_settings(call.from_user.id, key='language')
-        history = db.get_history_from_db(user_id=call.from_user.id)
+        history = db.get_history_from_db(user_id=user_id)
         search_record = ()
         for i_rec in range(len(history)):
             if int(history[i_rec][0]) == int(call.data[7:]):
@@ -359,8 +353,8 @@ def history_button_catcher(call):
 def choose_city(message: types.Message) -> None:
     """
     Функция выбора города.
-    :param message:
-    :return:
+    :param message: Message
+    :return: None
     """
     logger.info(f'function {choose_city.__name__} was called')
     language = db.get_settings(user_id=message.from_user.id, key='language')
@@ -422,8 +416,8 @@ def choose_city(message: types.Message) -> None:
 def city_buttons_catcher(call: types.CallbackQuery) -> None:
     """
     Функция, обрабатывающая нажатия кнопок городов.
-    :param call:
-    :return:
+    :param call: Callback
+    :return: None
     """
     logger.info(f'Function {city_buttons_catcher.__name__} called and use arg: '
                 f'user_id {call.from_user.id} and data: {call.data}')
@@ -450,8 +444,8 @@ def city_buttons_catcher(call: types.CallbackQuery) -> None:
 def hotel_counter(message: types.Message) -> None:
     """
     Функция обрабатывающая ответ пользователя на вопрос о количестве результатов выдачи поиска
-    :param message:
-    :return:
+    :param message: Message
+    :return: None
     """
     if ' ' not in message.text.strip() and message.text.strip().isdigit() and 0 < int(message.text.strip()) <= 20:
         logger.info(f'Function {hotel_counter.__name__} called, user input is in condition. use arg: '
@@ -478,8 +472,8 @@ def hotel_counter(message: types.Message) -> None:
 def photo_counter_answer(message: types.Message) -> None:
     """
     функция обрабатывающая количество фотографий для каждого результата поиска
-    :param message:
-    :return:
+    :param message: Message
+    :return: None
     """
     logger.info(f'Function {photo_counter_answer.__name__} called, user input is in condition. use arg: '
                 f'{message.text}')
@@ -500,8 +494,8 @@ def photo_counter_answer(message: types.Message) -> None:
 def choose_date(message: types.Message or types.CallbackQuery) -> None:
     """
     функция, формирующая меню выбора дат въезда/выезда
-    :param message:
-    :return:
+    :param message: Message or Cazllback
+    :return:None
     """
     date_1 = db.get_settings(user_id=message.from_user.id, key='date1')
     date_2 = db.get_settings(user_id=message.from_user.id, key='date2')
@@ -530,8 +524,8 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
 def callback_calendar_1(call: types.CallbackQuery) -> None:
     """
     функция обрабатывающая календарь чек ин
-    :param call:
-    :return:
+    :param call: Callback
+    :return:None
     """
     # {LSTEP[step]}
     logger.info(f'Function {callback_calendar_1.__name__} called ')
@@ -572,8 +566,8 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
 def callback_calendar_2(call: types.CallbackQuery) -> None:
     """
     Фнкция обрабатывающая календарь чекаута
-    :param call:
-    :return:
+    :param call: Callback
+    :return: None
     """
     logger.info(f'Function {callback_calendar_2.__name__} called')
     language = db.get_settings(user_id=call.from_user.id, key='language')
@@ -606,7 +600,7 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
                         user_id=call.from_user.id,
                         key='language')]
                 )
-                bot.register_next_step_handler(msg, distanse_from_centre)
+                bot.register_next_step_handler(msg, distance_from_centre)
             else:
                 end_conversation(user_id=str(call.from_user.id), chat_id=call.message.chat.id)
 
@@ -617,8 +611,14 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
             choose_date(call)
 
 
-def distanse_from_centre(message: types.Message) -> None:
-    logger.info(f'Function {distanse_from_centre.__name__} called, user input is in condition. use arg: '
+def distance_from_centre(message: types.Message) -> None:
+    """
+    Функция получающая дистанцию от центра в километрах
+    :param message:  Message
+    :return: None
+    """
+
+    logger.info(f'Function {distance_from_centre.__name__} called, user input is in condition. use arg: '
                 f'distance =  {message.text}')
     if message.text.strip().isdigit():
         db.set_settings(
@@ -633,15 +633,20 @@ def distanse_from_centre(message: types.Message) -> None:
         msg = bot.send_message(message.chat.id, reply)
         bot.register_next_step_handler(msg, min_max_price)
     else:
-        logger.info(f'Function {distanse_from_centre.__name__} called, user input IS NOT in  condition.')
+        logger.info(f'Function {distance_from_centre.__name__} called, user input IS NOT in  condition.')
         msg = bot.send_message(
             message.chat.id,
             interface['questions']['radius'][db.get_settings(message.from_user.id, key='language')]
         )
-        bot.register_next_step_handler(msg, distanse_from_centre)
+        bot.register_next_step_handler(msg, distance_from_centre)
 
 
 def min_max_price(message: types.Message) -> None:
+    """
+    Фнкция обрабатывающая пользовательский ввод максимальной и минимальной цены
+    :param message:  Message
+    :return: None
+    """
     logger.info(f'Function {min_max_price.__name__} called, user input is in condition. use arg: '
                 f'distance =  {message.text} user_id {message.from_user.id}')
     if message.text.replace(' ', '').isdigit() and len(message.text.split()) == 2:
@@ -670,9 +675,9 @@ def min_max_price(message: types.Message) -> None:
 def end_conversation(user_id: str, chat_id: int) -> None:
     """
     конец диалога, формирование ответов
-    :param user_id:
-    :param chat_id:
-    :return:
+    :param user_id: id пользователя
+    :param chat_id: id чата
+    :return: None
     """
     lang = db.get_settings(user_id=user_id, key='language')
     msg = bot.send_message(chat_id=chat_id, text='опять мясной мешок заставляет работать')
@@ -706,6 +711,11 @@ def end_conversation(user_id: str, chat_id: int) -> None:
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('save'))
 def saving_buttons_catcher(call):
+    """
+    Обработчик нажатых кнопок меню выбора сохранения истории запроса
+    :param call: Callback
+    :return: None
+    """
     logger.info(f'function {saving_buttons_catcher.__name__} was called')
     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
     if call.data.endswith('yes'):

@@ -9,35 +9,6 @@ from language import interface
 from settings import H_API_TOKEN
 from bot_requests.photos import make_photo_list
 
-# памятка
-# querystring
-#         {
-#                 "destinationId":"1506246"
-#                 ,"pageNumber":"1",
-#                 "pageSize":"25",
-#                 "checkIn":"2020-01-08",
-#                 "checkOut":"2020-01-15",
-#                 "adults1":"1",
-#                 "sortOrder":"PRICE",
-#                 "locale":"en_US",
-#                 "currency":"USD"
-#         }
-# parameters:
-#         {
-#             'language': 'ru_RU',
-#             'currency': 'RUB',
-#             'status': 'old',
-#             'first_name': 'Kelbor',
-#             'last_name': 'Hal',
-#             'command': 'lowprice',
-#             'city': '11594',
-#             'hotel_count': '12',
-#             'photo_count': '2',
-#             'date1': '1632258000.0',
-#             'date2': '1703710800.0'
-#         }
-
-
 order = {
     'lowprice': 'PRICE',
     'highprice': 'PRICE_HIGHEST_FIRST',

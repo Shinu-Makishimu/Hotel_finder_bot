@@ -1,13 +1,12 @@
 import datetime
-from typing import Any
 from loguru import logger
 
 
-def get_timestamp(date: datetime)-> int:
+def get_timestamp(date: datetime) -> int:
     """
     функция конвертации даты в таймстап для удобного хранения в бд
-    :param date:
-    :return:
+    :param date: объект Datetime
+    :return: целочисленное значение
     """
     y, m, d = [int(i) for i in str(date).split('-')]
     logger.info(f'Function {get_timestamp.__name__} called with argument:year {y} month{m} day{d}')
@@ -20,8 +19,9 @@ def get_timestamp(date: datetime)-> int:
 def get_date(tmstmp: int, days: bool = False) -> datetime:
     """
     конвертация формата таймстамп в дату
+
+    :param tmstmp: формат
     :param days:
-    :param tmstmp:
     :return:
     """
 

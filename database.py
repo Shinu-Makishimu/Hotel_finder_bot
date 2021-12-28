@@ -7,28 +7,10 @@ from typing import Any
 from accessory import get_timestamp
 from settings import NAME_DATABASE, redis_db, USL
 
-#
-# памятка состояний навигации
-# new новый нюфаг
-# old олдфаг
-# main главное меню
-# sett настройки
-# history история
-# city_h город поиска
-# count_h количество результатов в выдаче
-# count_p количество фото в одной выдаче
-# calendar очередь показывать календарь
-#
-#
-#
-
 language_dict = {
     'ru': 'ru_RU',
     'en': 'en_US'
 }
-
-
-#################################### секция sqlite3 ####################################
 
 
 def create_bd_if_not_exist() -> None:
@@ -68,41 +50,15 @@ def create_bd_if_not_exist() -> None:
         cursor.execute(query_2)
         cursor.execute(query_1)
         db.commit()
-        # with sqlite3.connect(NAME_DATABASE) as db:
-        #     cursor = db.cursor()
-        #
-        #     query = """PRAGMA foreign_keys=on;"""
-        #     query_1 = """CREATE TABLE IF NOT EXISTS clients(
-        #     user_id INTEGER PRIMARY KEY NOT NULL,
-        #     language TEXT,
-        #     currency TEXT,
-        #     status TEXT,
-        #     FOREIGN KEY (user_id) REFERENCES requests (user_id)
-        #     );"""
-        #     query_2 = """CREATE TABLE IF NOT EXISTS requests(
-        #     id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #     user_id INTEGER NOT NULL,
-        #     command TEXT,
-        #     price TEXT,
-        #     city TEXT,
-        #     hotel_count TEXT,
-        #     photo_count INTEGER,
-        #     date REAL,
-        #     hotels TEXT);"""
-        #
-        cursor.execute(query)
-        cursor.execute(query_2)
-        cursor.execute(query_1)
-        db.commit()
 
 
 def create_user_in_db(user_id: str, language: str) -> None:
     """
     Функция создаёт пользователя в базе данных
 
-    :param user_id:
-    :param language:
-    :return:
+    :param user_id: id пользователя
+    :param language: язык пользователя
+    :return: None
     """
     logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
 
@@ -131,8 +87,8 @@ def check_user_in_db(user_id: str) -> bool:
     """
     Функция проверяет наличие присутствия пользователя в базе данных
 
-    :param user_id:
-    :return:
+    :param user_id: id пользователя
+    :return: True если пользователь найден, иначе False
     """
     logger.info(f'Function {check_user_in_db.__name__} called and use args: user_id\t{user_id}')
 
@@ -151,9 +107,9 @@ def check_user_in_db(user_id: str) -> bool:
 
 def get_user_from_bd(user_id: str) -> list[str]:
     """
-    функция добывания пользователя из базы
-    :param user_id:
-    :return:
+    функция добывания пользователя из базы данных
+    :param user_id: id пользователя
+    :return: список данных о пользователе
     """
     logger.info(f'Function {get_user_from_bd.__name__} called use args: user_id\t{user_id}')
 
@@ -171,10 +127,10 @@ def get_user_from_bd(user_id: str) -> list[str]:
 def set_settings_in_db(user_id: str, key: str, value: str) -> None:
     """
     функция записи в базу ключевых параметров
-    :param user_id:
-    :param key:
-    :param value:
-    :return:
+    :param user_id: id пользователя
+    :param key: ключ
+    :param value: значение
+    :return: None
     """
     logger.info(f'Function {set_settings_in_db.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}\tvalue {value} ')
@@ -196,24 +152,10 @@ def set_settings_in_db(user_id: str, key: str, value: str) -> None:
 
 def create_history_record(user_id: str, hist_dict: dict) -> None:
     """
-    :param user_id:
-    :param hist_dict:
-    :return:
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        command TEXT,
-        city TEXT,
-        hotel_count TEXT,
-        photo_count TEXT,
-        distance TEXT,
-        min_price TEXT,
-        max_price TEXT,
-        date1 TEXT,
-        date2 TEXT,
-        currency TEXT);
-
-
+    Функция записи в базу данных параметров запроса отелей для формирования историии
+    :param user_id: id пользователя
+    :param hist_dict: словарь, содержащий подготовленные к записи в бд параметры
+    :return: None
     """
     logger.info(f'Function {create_history_record.__name__} called with arguments: '
                 f'user_id {user_id}\thist_dict\n{hist_dict}')
@@ -245,10 +187,12 @@ def create_history_record(user_id: str, hist_dict: dict) -> None:
 def get_history_from_db(user_id: str, short=False) -> list[str]:
     """
     функция получения истории поиска.
-    Идея: хранить json с параметрами поиска и результатами. и выдавать список таких json если их больше 1
-    :param short:
-    :param user_id:
-    :return:
+    :param short: Параметр (по умолчанию False) настраивающий выдачу из бд.
+        True - короткая выдача: id записи, команда на поиск, название города.
+        False - полная выдача. id записи, id города, команда на поиск, дата запроса, количество отелей в выдаче,
+            количество фото, минимальная, максимальная цена, радиус поиска.
+    :param user_id: id пользователя
+    :return: список поисковывых запросов в виде кортежей строк
     """
     logger.info(f'Function {get_history_from_db.__name__} called with argument: user_ id {user_id}')
     if short:
@@ -268,14 +212,11 @@ def get_history_from_db(user_id: str, short=False) -> list[str]:
     return response
 
 
-#################################### секция redis ####################################
-
-
 def check_user_in_redis(user_id: str) -> bool:
     """
     функция проверки наличия присутствия пользователя в редисе
-    :param user_id:
-    :return:
+    :param user_id: id пользователя
+    :return: True если пользователь есть, иначе False
     """
     logger.info(f'Function {check_user_in_redis.__name__} called use args: user_id\t{user_id}')
 
@@ -293,11 +234,11 @@ def create_user_in_redis(user_id: str, language: str, first_name: str, last_name
     """
     Функция создания пользователя в редисе. При этом проверяется наличие пользователя в бд.
     Если пользователь в бд есть то данные берутся оттуда
-    :param user_id:
-    :param language:
-    :param first_name:
-    :param last_name:
-    :return:
+    :param user_id: id пользователя
+    :param language: язык пользователя
+    :param first_name: первое имя
+    :param last_name: второе имя
+    :return: None
     """
     logger.info(f'Function {create_user_in_redis.__name__} called with args: '
                 f'user_id{user_id}, language {language}, first name {first_name}, last name {last_name}')
@@ -321,9 +262,9 @@ def create_user_in_redis(user_id: str, language: str, first_name: str, last_name
 def set_settings(user_id: str or int, key: str, value: Any) -> None:
     """
     функция записи в редис ключа key  с параметром value
-    :param user_id:
-    :param key:
-    :param value:
+    :param user_id: id пользователя
+    :param key: ключ
+    :param value: значение
     :return:
     """
     logger.info(f'Function {set_settings.__name__} called with arguments: '
@@ -333,13 +274,13 @@ def set_settings(user_id: str or int, key: str, value: Any) -> None:
     redis_db.hset(user_id, mapping={key: value})
 
 
-def get_settings(user_id: str or int, key: object = False, remove_kebab: object = False) -> str:
+def get_settings(user_id: str or int, key: object = False, remove_kebab: bool = False) -> str:
     """
     Функция получение настройки по ключу key
-    :param remove_kebab:
-    :param user_id:
-    :param key:
-    :return:
+    :param user_id: id пользователя
+    :param key: ключ
+    :param remove_kebab: True - запись в редисе с ключом key удаляется, иначе нет. по умолчанию False
+    :return: строка с параметром
     """
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}, remove {remove_kebab}')
@@ -357,9 +298,9 @@ def set_navigate(user_id: str or int, value: str) -> None:
     """
     Функция записи в редис отметки о том где пользователь
     пока что не особо используется
-    :param user_id:
-    :param value:
-    :return:
+    :param user_id: id пользователя
+    :param value: значение
+    :return: None
     """
     logger.info(f'Function {set_navigate.__name__} called with argument: '
                 f'user_id {user_id}\tvalue{value}')
@@ -370,8 +311,8 @@ def set_navigate(user_id: str or int, value: str) -> None:
 def get_navigate(user_id: Any) -> str:
     """
     функция выдачи из редиса отметки о навигации пользователя
-    :param user_id:
-    :return:
+    :param user_id: id пользователя
+    :return: строка со статусом пользователя
     """
     logger.info(f'Function {get_navigate.__name__} called with argument: '
                 f'user_id {user_id}')
@@ -383,8 +324,9 @@ def get_navigate(user_id: Any) -> str:
 
 def set_history(user_id: str) -> None:
     """
-    :param user_id:
-    :return:
+    Функция подготавливает поисковые параметры к записи в базу данных sqlite
+    :param user_id: id пользователя
+    :return: None
     """
     logger.info(f'Function {set_history.__name__} called with argument: '
                 f'user_id {user_id}')
@@ -407,16 +349,12 @@ def set_history(user_id: str) -> None:
     create_history_record(user_id=user_id, hist_dict=user)
 
 
-def get_history(user_id: str, short=False) -> list[str]:
-    logger.info(f'Function {get_history.__name__} was called with arg user_id{user_id}')
-    if short:
-        db_result = get_history_from_db(user_id=user_id, short=short)
-    else:
-        db_result = get_history_from_db(user_id=user_id)
-    return db_result
-
-
 def clean_settings(user_id: str) -> None:
+    """
+    Функция удаляет использованные параметры поиска
+    :param user_id: id пользователя
+    :return: None
+    """
     logger.info(f'Function {clean_settings.__name__} was called with arg user_id{user_id}')
     for element in USL:
         redis_db.hdel(user_id, element)
@@ -426,8 +364,8 @@ def kill_user(user_id: int or str) -> None:
     """
     Перед началом новой сессии поиска надо убить запись о пользователе в редисе
 
-    :param user_id:
-    :return:
+    :param user_id: id пользователя
+    :return: None
     """
     logger.info(f'Function {kill_user.__name__} called with arg {user_id}')
     if check_user_in_redis(user_id):
@@ -436,6 +374,11 @@ def kill_user(user_id: int or str) -> None:
 
 
 def prepare_history_for_search(user_id: str) -> None:
+    """
+    Функция подготавливает запрос из истории запросов к повторному использованию
+    :param user_id: id пользователя
+    :return: None
+    """
     logger.info(f'function {prepare_history_for_search.__name__} was called')
     clean_settings(user_id=user_id)
     history_record = get_history_from_db(user_id=user_id)
