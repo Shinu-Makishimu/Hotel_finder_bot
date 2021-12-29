@@ -1,0 +1,16 @@
+certifi==2021.10.8
+charset-normalizer==2.0.8
+colorama==0.4.4
+Deprecated==1.2.13
+idna==3.3
+loguru==0.5.3
+pyTelegramBotAPI==4.2.0
+python-dateutil==2.8.2
+python-decouple==3.5
+python-telegram-bot-calendar==1.0.5
+redis==4.0.2
+requests==2.26.0
+six==1.16.0
+urllib3==1.26.7
+win32-setctime==1.0.4
+wrapt==1.13.3
