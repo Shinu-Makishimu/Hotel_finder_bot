@@ -1,74 +1,54 @@
-import re
 import datetime
 from loguru import logger
 
-def check_message(message):
 
-    status = get_navigate(message)
-    text = message.text.strip()
-
-    if status == 'lowprice':
-        return True
-    elif status == 'highprice' :
-        return True
-    elif status == 'bestdeal':
-        return True
-    else:
-        return False
-
-
-def hotel_price(hotel: dict) -> int:
+def get_timestamp(date: datetime) -> int:
     """
-    return hotel price
-    :param hotel: dict - hotel information
-    :return: integer or float like number
+    функция конвертации даты в таймстап для удобного хранения в бд
+    :param date: объект Datetime
+    :return: целочисленное значение
     """
-
-    price = 0
-
-    if hotel.get('ratePlan').get('price').get('exactCurrent'):
-        price = hotel.get('ratePlan').get('price').get('exactCurrent')
-    else:
-        price = hotel.get('ratePlan').get('price').get('current')
-        price = int(re.sub(r'[^0-9]', '', price))
-
-
-    return price
-
-
-def address(hotel, message):
-    """
-    returns hotel address
-    :param msg: Message
-    :param hotel: dict - hotel information
-    :return: hotel address
-    """
-    message = ('no_information', message)
-    logger.info(f'Function {address.__name__} called with argument: hotel {hotel}')
-
-    if hotel.get('address'):
-        result = hotel.get('address').get('streetAddress', message)
-    return message
-
-
-def rating(rating, message):
-    """
-    returns rating hotel in asterisks view
-    :param rating: hotel rating
-    :param msg: Message
-    :return: string like asterisks view hotel rating
-    """
-    if not rating:
-        return ('no_information', message)
-    return '⭐' * int(rating)
-
-
-def get_timestamp(y,m,d):
+    y, m, d = [int(i) for i in str(date).split('-')]
     logger.info(f'Function {get_timestamp.__name__} called with argument:year {y} month{m} day{d}')
-    return datetime.datetime.timestamp(datetime.datetime(y,m,d))
+    result = int(datetime.datetime.timestamp(datetime.datetime(y, m, d)))
+    logger.info(f'Function {get_timestamp.__name__} create result: {result}')
+
+    return result
 
 
-def get_date(tmstmp):
+def get_date(tmstmp: int, days: bool = False) -> datetime:
+    """
+    конвертация формата таймстамп в дату
+
+    :param tmstmp: формат
+    :param days:
+    :return:
+    """
+
     logger.info(f'Function {get_date.__name__} called with argument: {tmstmp}')
+    try:
+        if days:
+            result = datetime.datetime.fromtimestamp(tmstmp)
+        else:
+            result = datetime.datetime.fromtimestamp(tmstmp).date().strftime("%Y-%m-%d")
+        logger.info(f'Function {get_date.__name__} create result: {result}')
+    except Exception as error:
+        logger.error(f'function crushed with {error}')
 
-    return datetime.datetime.fromtimestamp(tmstmp).date()
+    return result
+
+
+def check_dates(check_in: int, check_out:int) -> bool:
+    """
+    проверка. если чекин больше чекаута возвращается false
+    :param check_in:
+    :param check_out:
+    :return:
+    """
+    logger.info(f'Function {check_dates.__name__} called with argument: {check_in} {check_out}')
+    if check_in >= check_out:
+        return False
+    else:
+        return True
+
+
