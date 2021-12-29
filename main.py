@@ -230,7 +230,6 @@ def main_menu(user_id: str, command: str, chat_id: int) -> None:
                 f'and use argument: user_id {user_id} key {command} chat_id {chat_id}')
     lang = db.get_settings(user_id, key='language')
     if command in ['start', 'another_one']:
-        db.clean_settings(user_id=user_id)
         if command == 'another_one':
             reply = interface['responses']['another_one'][lang]
         else:
@@ -356,6 +355,7 @@ def choose_city(message: types.Message) -> None:
     :return: None
     """
     logger.info(f'function {choose_city.__name__} was called')
+    db.clean_settings(user_id=message.from_user.id)
     language = db.get_settings(user_id=message.from_user.id, key='language')
     if message.text.strip().replace(' ', '').replace('-', '').isalpha():
 

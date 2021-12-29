@@ -350,7 +350,7 @@ def set_history(user_id: str) -> None:
     create_history_record(user_id=user_id, hist_dict=user)
 
 
-def clean_settings(user_id: str) -> None:
+def clean_settings(user_id: int or str) -> None:
     """
     Функция удаляет использованные параметры поиска
     :param user_id: id пользователя
@@ -374,7 +374,7 @@ def kill_user(user_id: int or str) -> None:
         logger.info(f'hitman report: user with id {user_id} was killed')
 
 
-def prepare_history_for_search(user_id: str) -> None:
+def prepare_history_for_search(user_id: int or str) -> None:
     """
     Функция подготавливает запрос из истории запросов к повторному использованию
     :param user_id: id пользователя
