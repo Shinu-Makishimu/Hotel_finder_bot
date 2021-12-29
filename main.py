@@ -3,7 +3,7 @@ from time import sleep
 from loguru import logger
 from telebot import TeleBot, types
 from datetime import datetime, date
-from telegram_bot_calendar import DetailedTelegramCalendar as DTC
+from telegram_bot_calendar import DetailedTelegramCalendar
 
 import accessory
 import keyboard as kb
@@ -505,7 +505,10 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
 
     if date_1 == '0' or date_1 is None:
         reply = interface['questions']['date1'][language]
-        calendar, step = DTC(calendar_id=1, locale=language[:2], min_date=date.today()).build()
+        calendar, step = DetailedTelegramCalendar(
+            calendar_id=1,
+            locale=language[:2],
+            min_date=date.today()).build()
         try:
             # это очень нужно!
             bot.send_message(message.chat.id, f"{reply}", reply_markup=calendar)
@@ -515,11 +518,11 @@ def choose_date(message: types.Message or types.CallbackQuery) -> None:
     else:
         min_date = datetime.fromtimestamp(float(date_1)).date()
         reply = interface['questions']['date2'][language]
-        calendar, step = DTC(calendar_id=2, locale=language[:2], min_date=min_date).build()
+        calendar, step = DetailedTelegramCalendar(calendar_id=2, locale=language[:2], min_date=min_date).build()
         bot.send_message(message.message.chat.id, f"{reply}", reply_markup=calendar)
 
 
-@bot.callback_query_handler(func=DTC.func(calendar_id=1))
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
 def callback_calendar_1(call: types.CallbackQuery) -> None:
     """
     функция обрабатывающая календарь чек ин
@@ -529,7 +532,7 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
     # {LSTEP[step]}
     logger.info(f'Function {callback_calendar_1.__name__} called ')
     # result= key= step = ''
-    result, key, step = DTC(calendar_id=1).process(call.data)
+    result, key, step = DetailedTelegramCalendar(calendar_id=1).process(call.data)
     lang = db.get_settings(user_id=call.from_user.id, key='language')
 
     if not result and key:
@@ -561,7 +564,7 @@ def callback_calendar_1(call: types.CallbackQuery) -> None:
             choose_date(call)
 
 
-@bot.callback_query_handler(func=DTC.func(calendar_id=2))
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
 def callback_calendar_2(call: types.CallbackQuery) -> None:
     """
     Фнкция обрабатывающая календарь чекаута
@@ -570,7 +573,7 @@ def callback_calendar_2(call: types.CallbackQuery) -> None:
     """
     logger.info(f'Function {callback_calendar_2.__name__} called')
     language = db.get_settings(user_id=call.from_user.id, key='language')
-    result, key, step = DTC(calendar_id=2).process(call.data)
+    result, key, step = DetailedTelegramCalendar(calendar_id=2).process(call.data)
 
     if not result and key:
         bot.edit_message_text(

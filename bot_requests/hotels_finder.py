@@ -1,6 +1,6 @@
 import re
 import requests
-from typing import Any, Union
+from typing import Any, Union, Dict
 from loguru import logger
 
 from accessory import get_date
@@ -16,8 +16,7 @@ order = {
 }
 
 
-# noinspection PyTypeChecker
-def get_hotels(user_id: str) -> dict:
+def get_hotels(user_id: str) -> Dict or None:
     """
     Функция получает юзер айди, на его основе формирует с помощью вспомогательных функций список результатов
     :param user_id:
@@ -29,7 +28,8 @@ def get_hotels(user_id: str) -> dict:
     params = get_settings(user_id=user_id, key='all')
 
     data = request_hotels(p=params)
-    if 'bad_req' in data:
+
+    if 'bad_request' in data:
         return {'bad_request': 'bad_request'}
 
     data = structure_hotels_info(user_id=user_id, data=data)
@@ -60,14 +60,13 @@ def get_hotels(user_id: str) -> dict:
     return data
 
 
-def request_hotels(p, page=1):
+def request_hotels(p: Dict, page=1) -> Dict:
     """
     функция запроса списка отелей из апи
 
-    почему то при использовании API_TOKEN, апи не принимает его. корректность в енв проверено
     :param p:
     :param page:
-    :return:
+    :return: возвращает словарь
     """
     logger.info(f'Function {request_hotels.__name__} called with argument: parameters = {p}')
     url = "https://hotels4.p.rapidapi.com/properties/list"
@@ -99,17 +98,15 @@ def request_hotels(p, page=1):
         data = response.json()
         if data.get('message'):
             raise requests.exceptions.RequestException
-        # with open('hotels_data.txt', 'w') as file: # just for testing
-        #     json.dump(data, file, indent=4)
         logger.info(f'Hotels api(properties/list) response received: {data}')
         return data
 
     except Exception as error:
         logger.error(f'Error receiving response: {error}')
-        return {'bad_req': 'bad_req'}
+        return {'bad_request': 'bad_request'}
 
 
-def structure_hotels_info(user_id, data) -> dict or None:
+def structure_hotels_info(user_id, data) -> Dict or None:
     """
     Структурирование результатов поиск для удобной обработки в дальнейшем
     :param user_id:
@@ -154,6 +151,13 @@ def structure_hotels_info(user_id, data) -> dict or None:
 
 
 def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[dict]:
+    """
+    фильтрация  отелей по дистанции.
+    :param hotels: Список словарей отелей
+    :param distance: дистанция в километрах
+    :param limit: ограничение на количество отелей в списке
+    :return:
+    """
     logger.info(f'Function {choose_best_hotels.__name__} called with arguments: '
                 f'distance = {distance}, quantity = {limit}\n{hotels}')
     hotels = list(filter(lambda x: float(x["distance"].strip().replace(',', '.').split()[0]) <= distance, hotels))
@@ -163,10 +167,13 @@ def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[
     return hotels
 
 
-def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[str, Union[str, list[str]]]]:
+def generate_hotels_descriptions(hotels: Dict, user_id: str) -> Dict[Any, Dict[str, Union[str, list[str]]]]:
     """
-    формирование словаря с результатами поиска. словарь вида:
-    hotels_info =
+    формирование словаря с сообщением для вывода пользователю и фотографиями
+
+    :param hotels: словарь с отелями
+    :param user_id: id пользователя
+    :return: hotels_info =
                 {
                     "hotel_ID":
                         {
@@ -174,9 +181,6 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
                             "message": сформированный ответ для пользователя
                         }
                 }
-    :param hotels:
-    :param user_id:
-    :return:
     """
     logger.info(f'Function {generate_hotels_descriptions.__name__} called with argument {hotels}')
     hotels_info = dict()
@@ -244,11 +248,18 @@ def generate_hotels_descriptions(hotels: dict, user_id: str) -> dict[Any, dict[s
                         "photo": photo
                     }
             })
-
     return hotels_info
 
 
-def hotel_price(hotel, lang, user_id) -> int:
+def hotel_price(hotel, lang, user_id) -> float or str:
+    """
+    Функция формирует цену отеля. количество дней проживания перемножается на стоимость суток.
+
+    :param hotel: словарь с данными отеля полученными от api
+    :param lang: язык пользователя
+    :param user_id:  id пользователя
+    :return: возвращаем цену, округленную до двух знаков. Если цену получить не удалось, возвращаем "нет данных"
+    """
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
     check_in = int(get_settings(user_id=user_id, key='date1'))
     check_out = int(get_settings(user_id=user_id, key='date2'))
@@ -267,6 +278,12 @@ def hotel_price(hotel, lang, user_id) -> int:
 
 
 def hotel_address(hotel: dict, lang: str) -> str:
+    """
+    Функция формирования адреса. Если адреса нет, возвращаем нет данных
+    :param hotel: словарь с данными отеля полученными из API
+    :param lang:  язык пользователя
+    :return: строка с адресом, если адреса нет, возвращаем нет данных
+    """
     logger.info(f'Function {hotel_address.__name__} called with argument {hotel}')
     message = interface['errors']['no_information'][lang]
     if hotel.get('address'):
@@ -275,6 +292,13 @@ def hotel_address(hotel: dict, lang: str) -> str:
 
 
 def hotel_rating(rating: float, lang: str) -> str:
+    """
+    Рейтинг отеля.
+    :param rating: число звезд.
+    :param lang: язык
+    :return: возвращает строку с количеством звездочек, равными рейтингу отеля, если
+    информации нет то возвращает строку нет данных
+    """
     logger.info(f'Function {hotel_rating.__name__} called with {rating}')
     if not rating:
         return interface['errors']['no_information'][lang]
@@ -282,6 +306,12 @@ def hotel_rating(rating: float, lang: str) -> str:
 
 
 def google_maps_link(coordinates: dict, lang: str) -> str:
+    """
+    формирует ссылку на карты гугл.
+    :param coordinates: словарь с широтой и долготой
+    :param lang: язык пользователя
+    :return: строка ссылки или нет данных
+    """
     if not coordinates:
         return interface['errors']['no_information'][lang]
     text = interface['elements']['g_link'][lang]
@@ -291,6 +321,12 @@ def google_maps_link(coordinates: dict, lang: str) -> str:
 
 
 def days_count(check_in: int, check_out: int):
+    """
+    счетчик дней для вычисления итоговой стоимости проживания
+    :param check_in: дата заезда
+    :param check_out: дата выезда
+    :return: целое число дней
+    """
     logger.info(f'Function {days_count.__name__} was called with { check_in} {check_out}')
     date_in = get_date(tmstmp=check_in, days=True)
     date_out = get_date(tmstmp=check_out, days=True)

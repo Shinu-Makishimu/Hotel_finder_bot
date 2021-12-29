@@ -5,12 +5,12 @@ from accessory import get_date
 
 def start_reply(first_name: str, last_name: str, status: str, language: str) -> str:
     """
-    формирует строку приветсятвия
-    :param first_name:
-    :param last_name:
-    :param status:
-    :param language:
-    :return:
+    Функция формирует строку приветствия, в зависимости от статуса пользователя.
+    :param first_name: первое имя
+    :param last_name: второе имя
+    :param status: статус
+    :param language: язык
+    :return:приветственное сообщение
     """
     logger.info(f'"{start_reply.__name__}" command is called')
     person = f' {first_name} {last_name}!\n'
@@ -24,10 +24,10 @@ def start_reply(first_name: str, last_name: str, status: str, language: str) -> 
 
 def settings_reply(language: str, currency: str) -> str:
     """
-    формирует строку текущих настроек
-    :param language:
-    :param currency:
-    :return:
+    формирует ответ с  текущими настройками
+    :param language: язык пользователя
+    :param currency: валюта
+    :return: строка сообщения
     """
     reply = "\t\t{menu}\n\n{ans}:\n\t{your_lang}:\t{lang}\n\t{your_cur}:\t{cur}".format(
         menu=interface['elements']['settings_menu'][language],
@@ -41,6 +41,12 @@ def settings_reply(language: str, currency: str) -> str:
 
 
 def price_reply(language: str, currency: str) -> str:
+    """
+    Функция формирует строку  с ценой и валютой
+    :param language: язык
+    :param currency: валюта
+    :return: строка ответа
+    """
     reply = "{menu}\n{ans}: {cur}".format(
         menu=interface['questions']['price'][language],
         ans=interface['responses']['current_currency'][language],
@@ -50,6 +56,12 @@ def price_reply(language: str, currency: str) -> str:
 
 
 def history_reply(record: tuple, lang: str) -> str:
+    """
+    Формирует строку с параметрами поискового запроса, сформированную на основе данных из базы
+    :param record: кортеж с параметрами поискового запроса
+    :param lang: язык
+    :return: строка удобная для восприятия пользователем
+    """
     search_type = record[2]
     search_date = get_date(int(record[5]))
     city = record[4]

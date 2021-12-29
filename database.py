@@ -274,13 +274,14 @@ def set_settings(user_id: str or int, key: str, value: Any) -> None:
     redis_db.hset(user_id, mapping={key: value})
 
 
-def get_settings(user_id: str or int, key: object = False, remove_kebab: bool = False) -> str:
+def get_settings(user_id: str or int, key: str = False, remove_kebab: bool = False) -> str or dict:
     """
     Функция получение настройки по ключу key
     :param user_id: id пользователя
-    :param key: ключ
+    :param key: параметр который требуется вернуть.
+        Если передан ключ all то возвращаются все параметры имеющиеся для user_id
     :param remove_kebab: True - запись в редисе с ключом key удаляется, иначе нет. по умолчанию False
-    :return: строка с параметром
+    :return: строка с параметром или словарь
     """
     logger.info(f'Function {get_settings.__name__} called with arguments: '
                 f'user_id {user_id}\tkey {key}, remove {remove_kebab}')

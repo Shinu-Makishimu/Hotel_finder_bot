@@ -22,9 +22,8 @@ def get_date(tmstmp: int, days: bool = False) -> datetime:
 
     :param tmstmp: формат
     :param days:
-    :return:
+    :return: объект дата
     """
-
     logger.info(f'Function {get_date.__name__} called with argument: {tmstmp}')
     try:
         if days:
